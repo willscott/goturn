@@ -30,6 +30,29 @@ type StunHeader struct {
   Id      []byte
 }
 
+type StunAttributeType uint16
+const (
+  MappedAddress StunAttributeType = 0x1
+  Username = 0x6
+  MessageIntegrity = 0x8
+  ErrorCode = 0x9
+  UnknownAttributes = 0xA
+  Realm = 0x14
+  Nonce = 0x15
+  XorMappedAddress = 0x20
+
+  // comprehension-optional attributes
+  Software = 0x8022
+  AlternateServer = 0x8023
+  Fingerprint = 0x8028
+)
+
+type StunAttribute struct {
+  Type    StunAttributeType
+  Length  uint16
+  Value   []byte
+}
+
 func (h *StunHeader) Encode() ([]byte, error) {
   var classEnc uint16 = 0
   buf := new(bytes.Buffer)
