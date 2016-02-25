@@ -54,6 +54,11 @@ type StunAttribute struct {
   Value   []byte
 }
 
+type StunMessage struct {
+  Header StunHeader
+  Attributes []StunAttribute
+}
+
 
 func (h *StunHeader) Encode() ([]byte, error) {
   var classEnc uint16 = 0
@@ -158,4 +163,27 @@ func (h *MappedAddressAttribute) Length() (uint16) {
   } else {
     return 20
   }
+}
+
+func Parse(data []byte) (StunMessage, error) {
+  message := new(StunMessage)
+  message.Attributes = []
+  if err := message.Header.decode(data); err != nil {
+    return nil, err
+  }
+  data = data[20:]
+  length := message.Header.Length
+  if len(data) != length {
+    return errors.New("Message has incorrect Length")
+  }
+  while len(data) > 0 {
+    attribute := new(StunAttribute)
+    if err = attribute.Decode(data); err != nil {
+      return nil, err
+    }
+    message.Attributes = Append(message.Attributes, attribute)
+    len := int(attribute.Length + 3 / 4)
+    data = data[len:]
+  }
+  return message, nil
 }
