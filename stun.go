@@ -4,6 +4,7 @@ import (
   "bytes"
   "encoding/binary"
   "errors"
+  "fmt"
   "net"
 )
 
@@ -48,10 +49,11 @@ const (
   Fingerprint = 0x8028
 )
 
-type StunAttribute struct {
-  Type    StunAttributeType
-  Length  uint16
-  Value   []byte
+type StunAttribute interface {
+  Type()          StunAttributeType
+  Encode()        ([]byte, error)
+  Decode([]byte)  error
+  Length()        uint16
 }
 
 type StunMessage struct {
@@ -122,15 +124,42 @@ func (h *StunHeader) Decode(data []byte) (error) {
   return nil
 }
 
+func DecodeStunAttribute(data []byte) (*StunAttribute, error) {
+  attributeType := binary.BigEndian.Uint16(data)
+  length := binary.BigEndian.Uint16(data[2:])
+  var result StunAttribute
+  switch StunAttributeType(attributeType) {
+  case MappedAddress:
+    result = new(MappedAddressAttribute)
+  }
+  err := result.Decode(data[4:])
+  if err != nil {
+    return nil, err
+  } else if result.Length() != length {
+    return nil, errors.New(fmt.Sprintf("Incorrect Length Specified for %T", result))
+  }
+  return &result, nil
+}
+
+func attributeHeader(a StunAttribute) (uint32) {
+  attributeType := uint16(a.Type())
+  return (uint32(attributeType) << 16) + uint32(a.Length())
+}
+
 type MappedAddressAttribute struct {
   Family  uint16
   Port    uint16
   Address net.IP
 }
 
-func (h *MappedAddressAttribute) Encode() ([]byte, error) {
+func (h MappedAddressAttribute) Type() (StunAttributeType) {
+  return MappedAddress
+}
+
+func (h MappedAddressAttribute) Encode() ([]byte, error) {
   buf := new(bytes.Buffer)
-  err := binary.Write(buf, binary.BigEndian, h.Family)
+  err := binary.Write(buf, binary.BigEndian, attributeHeader(StunAttribute(h)))
+  err = binary.Write(buf, binary.BigEndian, h.Family)
   err = binary.Write(buf, binary.BigEndian, h.Port)
   err = binary.Write(buf, binary.BigEndian, h.Address)
 
@@ -140,7 +169,7 @@ func (h *MappedAddressAttribute) Encode() ([]byte, error) {
   return buf.Bytes(), nil
 }
 
-func (h *MappedAddressAttribute) Decode(data []byte) (error) {
+func (h MappedAddressAttribute) Decode(data []byte) (error) {
   if data[0] != 0 && data[1] != 1 && data[0] != 2 {
     return errors.New("Incorrect Mapped Address Family.")
   }
@@ -157,7 +186,7 @@ func (h *MappedAddressAttribute) Decode(data []byte) (error) {
   return nil
 }
 
-func (h *MappedAddressAttribute) Length() (uint16) {
+func (h MappedAddressAttribute) Length() (uint16) {
   if h.Family == 1 {
     return 8
   } else {
@@ -165,25 +194,37 @@ func (h *MappedAddressAttribute) Length() (uint16) {
   }
 }
 
-func Parse(data []byte) (StunMessage, error) {
+func Parse(data []byte) (*StunMessage, error) {
   message := new(StunMessage)
-  message.Attributes = []
-  if err := message.Header.decode(data); err != nil {
+  message.Attributes = []StunAttribute{}
+  if err := message.Header.Decode(data); err != nil {
     return nil, err
   }
   data = data[20:]
-  length := message.Header.Length
-  if len(data) != length {
-    return errors.New("Message has incorrect Length")
+  if len(data) != int(message.Header.Length) {
+    return nil, errors.New("Message has incorrect Length")
   }
-  while len(data) > 0 {
+  for len(data) > 0 {
     attribute := new(StunAttribute)
-    if err = attribute.Decode(data); err != nil {
+    if err := (*attribute).Decode(data); err != nil {
       return nil, err
     }
-    message.Attributes = Append(message.Attributes, attribute)
-    len := int(attribute.Length + 3 / 4)
+    message.Attributes = append(message.Attributes, *attribute)
+    len := int((*attribute).Length() + 3 / 4)
     data = data[len:]
   }
   return message, nil
+}
+
+func (m *StunMessage) Serialize() ([]byte, error) {
+  body := []byte{}
+
+  // Calculate length.
+  m.Header.Length = uint16(len(body))
+  head, err := m.Header.Encode()
+  if err != nil {
+    return nil, err
+  }
+  data := append(head, body...)
+  return data, nil
 }
