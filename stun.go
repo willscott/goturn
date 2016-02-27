@@ -5,7 +5,6 @@ import (
   "encoding/binary"
   "errors"
   "fmt"
-  "net"
 )
 
 const (
@@ -52,7 +51,7 @@ const (
 type StunAttribute interface {
   Type()          StunAttributeType
   Encode()        ([]byte, error)
-  Decode([]byte)  error
+  Decode([]byte, uint16)  error
   Length()        uint16
 }
 
@@ -131,8 +130,10 @@ func DecodeStunAttribute(data []byte) (*StunAttribute, error) {
   switch StunAttributeType(attributeType) {
   case MappedAddress:
     result = new(MappedAddressAttribute)
+  case Username:
+    result = new(UsernameAttribute)
   }
-  err := result.Decode(data[4:])
+  err := result.Decode(data[4:], length)
   if err != nil {
     return nil, err
   } else if result.Length() != length {
@@ -146,54 +147,6 @@ func attributeHeader(a StunAttribute) (uint32) {
   return (uint32(attributeType) << 16) + uint32(a.Length())
 }
 
-type MappedAddressAttribute struct {
-  Family  uint16
-  Port    uint16
-  Address net.IP
-}
-
-func (h MappedAddressAttribute) Type() (StunAttributeType) {
-  return MappedAddress
-}
-
-func (h MappedAddressAttribute) Encode() ([]byte, error) {
-  buf := new(bytes.Buffer)
-  err := binary.Write(buf, binary.BigEndian, attributeHeader(StunAttribute(h)))
-  err = binary.Write(buf, binary.BigEndian, h.Family)
-  err = binary.Write(buf, binary.BigEndian, h.Port)
-  err = binary.Write(buf, binary.BigEndian, h.Address)
-
-  if err != nil {
-    return nil, err
-  }
-  return buf.Bytes(), nil
-}
-
-func (h MappedAddressAttribute) Decode(data []byte) (error) {
-  if data[0] != 0 && data[1] != 1 && data[0] != 2 {
-    return errors.New("Incorrect Mapped Address Family.")
-  }
-  h.Family = uint16(data[1])
-  if (h.Family == 1 && len(data) < 8) || (h.Family == 2 && len(data) < 20) {
-    return errors.New("Mapped Address Attribute unexpectedly Truncated.")
-  }
-  h.Port = uint16(data[2]) << 8 + uint16(data[3])
-  if h.Family == 1 {
-    h.Address = data[4:8]
-  } else {
-    h.Address = data[4:20]
-  }
-  return nil
-}
-
-func (h MappedAddressAttribute) Length() (uint16) {
-  if h.Family == 1 {
-    return 8
-  } else {
-    return 20
-  }
-}
-
 func Parse(data []byte) (*StunMessage, error) {
   message := new(StunMessage)
   message.Attributes = []StunAttribute{}
@@ -205,8 +158,8 @@ func Parse(data []byte) (*StunMessage, error) {
     return nil, errors.New("Message has incorrect Length")
   }
   for len(data) > 0 {
-    attribute := new(StunAttribute)
-    if err := (*attribute).Decode(data); err != nil {
+    attribute, err := DecodeStunAttribute(data)
+    if err != nil {
       return nil, err
     }
     message.Attributes = append(message.Attributes, *attribute)
