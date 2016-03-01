@@ -1,9 +1,12 @@
 Go TURN
 =======
 
-This is a library providing a Go `Dialer` interface compatible with the golang
+This is a library providing a Go interface compatible with the golang
 [proxy](https://golang.org/x/net/proxy) package which connects through a
 [TURN](https://tools.ietf.org/html/rfc5766) relay.
+
+This package provides parsing and encoding support for [STUN](https://tools.ietf.org/html/rfc5389)
+and [TURN](https://tools.ietf.org/html/rfc5766) protocols.
 
 Installation
 ------------
