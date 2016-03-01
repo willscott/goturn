@@ -1,8 +1,6 @@
 package turn
 
 import (
-  "errors"
-  "fmt"
   "net"
   "time"
 )
@@ -29,8 +27,9 @@ type turn struct {
 }
 
 // Create a TURN Dialer for a given relay.
-func TURNDialer(network, addr string) (d Dialer, err error) {
-  dialer = new(Dialer)
+/*
+func TURNDialer(network, addr string) (Dialer, err error) {
+  dialer := Dialer{}
   dialer.Conn, err = DialRelay(network, addr, dialer.Timeout)
   if err != nil {
     return nil, err
@@ -55,3 +54,4 @@ func (d *Dialer) Dial(network, addr string) (c net.Conn, err error) {
     return nil, errors.New("proxy: no support for TURN proxy connections of type " + network)
   }
 }
+*/
