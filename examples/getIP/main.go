@@ -1,4 +1,4 @@
-package turn
+package main
 
 import (
   "flag"
@@ -8,7 +8,7 @@ import (
   "time"
 )
 
-var server = flag.String("server", "stun.google.com", "Remote Stun Server")
+var server = flag.String("server", "stun.l.google.com:19302", "Remote Stun Server")
 
 func parseResponse(datagram []byte) {
   msg, err := turn.Parse(datagram)
@@ -61,8 +61,7 @@ func main() {
   // listen for response
   c.SetReadDeadline(time.Now().Add(1000 * time.Millisecond))
   b := make([]byte, 2048)
-  _, err = c.Read(b)
-  if err != nil {
+  if _, err = c.Read(b); err != nil {
     log.Fatal("Failed to read response", err)
   }
   parseResponse(b)
