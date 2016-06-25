@@ -31,10 +31,10 @@ func (h ErrorCodeAttribute) Encode() ([]byte, error) {
 }
 
 func (h ErrorCodeAttribute) Decode(data []byte, length uint16) (error) {
-  if len(data) < 4 || len(data) < length {
+  if len(data) < 4 || len(data) > 65535 || uint16(len(data)) < length {
     return errors.New("Truncated Error Code Attribute")
   }
-  if uint16(data[0:1]) != 0 {
+  if uint8(data[0]) != 0 || uint8(data[1]) != 0 {
     return errors.New("Invalid reserved bytes in Error Code Attribute")
   }
   h.Class = uint8(data[2])
