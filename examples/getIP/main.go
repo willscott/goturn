@@ -22,7 +22,7 @@ func parseResponse(datagram []byte) {
 
   for _, attr := range msg.Attributes {
     if attr.Type() == turn.MappedAddress {
-      addr := attr.(turn.MappedAddressAttribute)
+      addr := attr.(*turn.MappedAddressAttribute)
       log.Printf("%s:%d", addr.Address, addr.Port)
       return
     }

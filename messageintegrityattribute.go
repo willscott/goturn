@@ -10,11 +10,11 @@ type MessageIntegrityAttribute struct {
   Hash []byte
 }
 
-func (h MessageIntegrityAttribute) Type() (StunAttributeType) {
+func (h *MessageIntegrityAttribute) Type() (StunAttributeType) {
   return MessageIntegrity
 }
 
-func (h MessageIntegrityAttribute) Encode() ([]byte, error) {
+func (h *MessageIntegrityAttribute) Encode() ([]byte, error) {
   buf := new(bytes.Buffer)
   err := binary.Write(buf, binary.BigEndian, attributeHeader(StunAttribute(h)))
   err = binary.Write(buf, binary.BigEndian, h.Hash)
@@ -25,7 +25,7 @@ func (h MessageIntegrityAttribute) Encode() ([]byte, error) {
   return buf.Bytes(), nil
 }
 
-func (h MessageIntegrityAttribute) Decode(data []byte, length uint16) (error) {
+func (h *MessageIntegrityAttribute) Decode(data []byte, length uint16) (error) {
   if length != 20 || len(data) < 20 {
     return errors.New("Truncated MessageIntegrity Attribute")
   }
@@ -33,6 +33,6 @@ func (h MessageIntegrityAttribute) Decode(data []byte, length uint16) (error) {
   return nil
 }
 
-func (h MessageIntegrityAttribute) Length() (uint16) {
+func (h *MessageIntegrityAttribute) Length() (uint16) {
   return 20
 }

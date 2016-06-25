@@ -12,11 +12,11 @@ type ErrorCodeAttribute struct {
   Phrase string
 }
 
-func (h ErrorCodeAttribute) Type() (StunAttributeType) {
+func (h *ErrorCodeAttribute) Type() (StunAttributeType) {
   return ErrorCode
 }
 
-func (h ErrorCodeAttribute) Encode() ([]byte, error) {
+func (h *ErrorCodeAttribute) Encode() ([]byte, error) {
   buf := new(bytes.Buffer)
   err := binary.Write(buf, binary.BigEndian, attributeHeader(StunAttribute(h)))
   err = binary.Write(buf, binary.BigEndian, uint16(0))
@@ -30,7 +30,7 @@ func (h ErrorCodeAttribute) Encode() ([]byte, error) {
   return buf.Bytes(), nil
 }
 
-func (h ErrorCodeAttribute) Decode(data []byte, length uint16) (error) {
+func (h *ErrorCodeAttribute) Decode(data []byte, length uint16) (error) {
   if len(data) < 4 || len(data) > 65535 || uint16(len(data)) < length {
     return errors.New("Truncated Error Code Attribute")
   }
@@ -49,6 +49,6 @@ func (h ErrorCodeAttribute) Decode(data []byte, length uint16) (error) {
   return nil
 }
 
-func (h ErrorCodeAttribute) Length() (uint16) {
+func (h *ErrorCodeAttribute) Length() (uint16) {
   return uint16(4 + len(h.Phrase))
 }
