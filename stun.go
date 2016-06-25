@@ -2,9 +2,11 @@ package turn
 
 import (
   "bytes"
+  "crypto/rand"
   "encoding/binary"
   "errors"
   "fmt"
+  "log"
 )
 
 const (
@@ -28,7 +30,7 @@ type StunHeader struct {
   Class   StunClass
   Type    StunType
   Length  uint16
-  Id      []byte
+  Id      [12]byte
 }
 
 type StunAttributeType uint16
@@ -118,7 +120,7 @@ func (h *StunHeader) Decode(data []byte) (error) {
   h.Type = stunType
   h.Class = stunClass
   h.Length = binary.BigEndian.Uint16(data[2:])
-  h.Id = data[8:20]
+  copy(h.Id[:], data[8:20])
 
   return nil
 }
@@ -132,11 +134,16 @@ func DecodeStunAttribute(data []byte) (*StunAttribute, error) {
     result = new(MappedAddressAttribute)
   case Username:
     result = new(UsernameAttribute)
+  default:
+    unknownAttr := new(UnknownStunAttribute)
+    unknownAttr.ClaimedType = StunAttributeType(attributeType)
+    result = unknownAttr
   }
   err := result.Decode(data[4:], length)
   if err != nil {
     return nil, err
   } else if result.Length() != length {
+    log.Print("length was ", result.Length(), " not ", length)
     return nil, errors.New(fmt.Sprintf("Incorrect Length Specified for %T", result))
   }
   return &result, nil
@@ -158,6 +165,7 @@ func Parse(data []byte) (*StunMessage, error) {
     return nil, errors.New("Message has incorrect Length")
   }
   for len(data) > 0 {
+    log.Print("Remaining data after header: ", len(data))
     attribute, err := DecodeStunAttribute(data)
     if err != nil {
       return nil, err
@@ -180,4 +188,12 @@ func (m *StunMessage) Serialize() ([]byte, error) {
   }
   data := append(head, body...)
   return data, nil
+}
+
+//Convienence functions for making commonly used data structures.
+func MakeStunRequest(header *StunHeader) (error) {
+  header.Class = StunRequest
+  header.Type = StunBinding
+  _, err := rand.Read(header.Id[:])
+  return err
 }

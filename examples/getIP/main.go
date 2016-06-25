@@ -62,8 +62,9 @@ func main() {
   // listen for response
   c.SetReadDeadline(time.Now().Add(1000 * time.Millisecond))
   b := make([]byte, 2048)
-  if _, err = c.Read(b); err != nil {
+  n, err := c.Read(b)
+  if err != nil || n == 0 || n > 2048 {
     log.Fatal("Failed to read response: ", err)
   }
-  parseResponse(b)
+  parseResponse(b[:n])
 }
