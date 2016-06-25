@@ -17,7 +17,7 @@ func parseResponse(datagram []byte) {
   }
 
   if msg.Header.Class != turn.StunResponse {
-    log.Fatal("Response message is not a STUN response.")
+    log.Fatal("Response message is not a STUN response.", msg.Header)
   }
 
   for _, attr := range msg.Attributes {

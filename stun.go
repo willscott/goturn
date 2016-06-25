@@ -6,7 +6,6 @@ import (
   "encoding/binary"
   "errors"
   "fmt"
-  "log"
 )
 
 const (
@@ -143,7 +142,6 @@ func DecodeStunAttribute(data []byte) (*StunAttribute, error) {
   if err != nil {
     return nil, err
   } else if result.Length() != length {
-    log.Print("length was ", result.Length(), " not ", length)
     return nil, errors.New(fmt.Sprintf("Incorrect Length Specified for %T", result))
   }
   return &result, nil
@@ -165,13 +163,13 @@ func Parse(data []byte) (*StunMessage, error) {
     return nil, errors.New("Message has incorrect Length")
   }
   for len(data) > 0 {
-    log.Print("Remaining data after header: ", len(data))
     attribute, err := DecodeStunAttribute(data)
     if err != nil {
       return nil, err
     }
     message.Attributes = append(message.Attributes, *attribute)
-    len := int((*attribute).Length() + 3 / 4)
+    // 4 byte header and rounded up to next multiple of 4
+    len := 4 * int(((*attribute).Length() + 7) / 4)
     data = data[len:]
   }
   return message, nil
