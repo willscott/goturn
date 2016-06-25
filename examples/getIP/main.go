@@ -43,26 +43,27 @@ func main() {
 
   // construct request message
   var packet turn.StunMessage
-  packet.Header.Class = turn.StunRequest
-  packet.Header.Type = turn.StunBinding
+  if err = turn.MakeStunRequest(&packet.Header); err != nil {
+    log.Fatal("Failed to construct header: ", err)
+  }
   packet.Attributes = make([]turn.StunAttribute,0)
 
   message, err := packet.Serialize()
   if err != nil {
-    log.Fatal("Failed to serialize packet", err)
+    log.Fatal("Failed to serialize packet: ", err)
   }
 
   // send message
   _, err = c.Write(message)
   if err != nil {
-    log.Fatal("Failed to send message", err)
+    log.Fatal("Failed to send message: ", err)
   }
 
   // listen for response
   c.SetReadDeadline(time.Now().Add(1000 * time.Millisecond))
   b := make([]byte, 2048)
   if _, err = c.Read(b); err != nil {
-    log.Fatal("Failed to read response", err)
+    log.Fatal("Failed to read response: ", err)
   }
   parseResponse(b)
 }
