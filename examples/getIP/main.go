@@ -11,18 +11,22 @@ import (
 var server = flag.String("server", "stun.l.google.com:19302", "Remote Stun Server")
 
 func parseResponse(datagram []byte) {
-  msg, err := turn.Parse(datagram)
+  msg, err := stun.Parse(datagram)
   if err != nil {
     log.Fatal("Could not parse response:", err)
   }
 
-  if msg.Header.Type != turn.StunBindingResponse {
+  if msg.Header.Type != stun.StunBindingResponse {
     log.Fatal("Response message is not a STUN response.", msg.Header)
   }
 
   for _, attr := range msg.Attributes {
-    if attr.Type() == turn.MappedAddress {
-      addr := attr.(*turn.MappedAddressAttribute)
+    if attr.Type() == stun.MappedAddress {
+      addr := attr.(*stun.MappedAddressAttribute)
+      log.Printf("%s:%d", addr.Address, addr.Port)
+      return
+    } else if attr.Type() == stun.XorMappedAddress {
+      addr := attr.(*stun.XorMappedAddressAttribute)
       log.Printf("%s:%d", addr.Address, addr.Port)
       return
     }
@@ -42,7 +46,7 @@ func main() {
   defer c.Close()
 
   // construct request message
-  packet,err := turn.NewStunBindingRequest()
+  packet,err := stun.NewBindingRequest()
   if err != nil {
     log.Fatal("Failed to generate request packet:", err)
   }

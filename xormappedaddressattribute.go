@@ -7,17 +7,17 @@ import (
   "net"
 )
 
-type MappedAddressAttribute struct {
+type XorMappedAddressAttribute struct {
   Family  uint16
   Port    uint16
   Address net.IP
 }
 
-func (h *MappedAddressAttribute) Type() (StunAttributeType) {
-  return MappedAddress
+func (h *XorMappedAddressAttribute) Type() (StunAttributeType) {
+  return XorMappedAddress
 }
 
-func (h *MappedAddressAttribute) Encode() ([]byte, error) {
+func (h *XorMappedAddressAttribute) Encode() ([]byte, error) {
   buf := new(bytes.Buffer)
   err := binary.Write(buf, binary.BigEndian, attributeHeader(StunAttribute(h)))
   err = binary.Write(buf, binary.BigEndian, h.Family)
@@ -30,7 +30,7 @@ func (h *MappedAddressAttribute) Encode() ([]byte, error) {
   return buf.Bytes(), nil
 }
 
-func (h *MappedAddressAttribute) Decode(data []byte, _ uint16) (error) {
+func (h *XorMappedAddressAttribute) Decode(data []byte, _ uint16) (error) {
   if data[0] != 0 && data[1] != 1 && data[0] != 2 {
     return errors.New("Incorrect Mapped Address Family.")
   }
@@ -47,7 +47,7 @@ func (h *MappedAddressAttribute) Decode(data []byte, _ uint16) (error) {
   return nil
 }
 
-func (h *MappedAddressAttribute) Length() (uint16) {
+func (h *XorMappedAddressAttribute) Length() (uint16) {
   if h.Family == 1 {
     return 8
   } else {

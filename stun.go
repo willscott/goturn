@@ -1,4 +1,4 @@
-package turn
+package stun
 
 import (
   "bytes"
@@ -12,9 +12,9 @@ const (
   magicCookie uint32 = 0x2112A442
 )
 
-type StunType uint16
+type HeaderType uint16
 const (
-  StunBindingRequest StunType = 0x0001
+  StunBindingRequest HeaderType = 0x0001
   StunSharedSecretRequest = 0x0002
   StunBindingResponse = 0x0101
   StunSharedSecretResponse = 0x0102
@@ -22,13 +22,13 @@ const (
   StunSharedSecretError = 0x0112
 )
 
-type StunHeader struct {
-  Type    StunType
+type Header struct {
+  Type    HeaderType
   Length  uint16
   Id      [12]byte
 }
 
-func (h StunHeader) String() string {
+func (h Header) String() string {
   return fmt.Sprintf("%T #%x [%db]", h.Type, h.Id, h.Length)
 }
 
@@ -57,12 +57,12 @@ type StunAttribute interface {
 }
 
 type StunMessage struct {
-  Header StunHeader
+  Header
   Attributes []StunAttribute
 }
 
 
-func (h *StunHeader) Encode() ([]byte, error) {
+func (h *Header) Encode() ([]byte, error) {
   buf := new(bytes.Buffer)
 
   err := binary.Write(buf, binary.BigEndian, h.Type)
@@ -80,7 +80,7 @@ func (h *StunHeader) Encode() ([]byte, error) {
   return buf.Bytes(), nil
 }
 
-func (h *StunHeader) Decode(data []byte) (error) {
+func (h *Header) Decode(data []byte) (error) {
   if len(data) < 20 {
     return errors.New("Header Length Too Short")
   }
@@ -98,7 +98,7 @@ func (h *StunHeader) Decode(data []byte) (error) {
     return errors.New("Message Length is not a multiple of 4")
   }
 
-  h.Type = StunType(binary.BigEndian.Uint16(data[0:]))
+  h.Type = HeaderType(binary.BigEndian.Uint16(data[0:]))
   h.Length = binary.BigEndian.Uint16(data[2:])
   copy(h.Id[:], data[8:20])
 
@@ -112,6 +112,8 @@ func DecodeStunAttribute(data []byte) (*StunAttribute, error) {
   switch StunAttributeType(attributeType) {
   case MappedAddress:
     result = new(MappedAddressAttribute)
+  case XorMappedAddress:
+    result = new(XorMappedAddressAttribute)
   case Username:
     result = new(UsernameAttribute)
   default:
@@ -170,9 +172,9 @@ func (m *StunMessage) Serialize() ([]byte, error) {
 }
 
 //Convienence functions for making commonly used data structures.
-func NewStunBindingRequest() (*StunMessage, error) {
+func NewBindingRequest() (*StunMessage, error) {
   message := StunMessage {
-    Header: StunHeader {
+    Header: Header {
       Type: StunBindingRequest,
     },
   }
