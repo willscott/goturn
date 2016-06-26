@@ -23,7 +23,20 @@ func (h *XorMappedAddressAttribute) Encode(msg *StunMessage) ([]byte, error) {
   err = binary.Write(buf, binary.BigEndian, h.Family)
   xport := h.Port ^ uint16(magicCookie >> 16)
   err = binary.Write(buf, binary.BigEndian, xport)
-  err = binary.Write(buf, binary.BigEndian, h.Address)
+
+  var xoraddress []byte
+  if h.Family == 1 {
+    xoraddress = make([]byte, 4)
+    binary.BigEndian.PutUint32(xoraddress, magicCookie)
+  } else {
+    xoraddress = make([]byte, 16)
+    binary.BigEndian.PutUint32(xoraddress, magicCookie)
+    copy(xoraddress[4:16], msg.Header.Id[:])
+  }
+  for i, _ := range xoraddress {
+    xoraddress[i] ^= h.Address[i]
+  }
+  err = binary.Write(buf, binary.BigEndian, xoraddress)
 
   if err != nil {
     return nil, err
