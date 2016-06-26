@@ -21,7 +21,8 @@ func (h *XorMappedAddressAttribute) Encode(msg *StunMessage) ([]byte, error) {
   buf := new(bytes.Buffer)
   err := binary.Write(buf, binary.BigEndian, attributeHeader(StunAttribute(h)))
   err = binary.Write(buf, binary.BigEndian, h.Family)
-  err = binary.Write(buf, binary.BigEndian, h.Port)
+  xport := h.Port ^ uint16(magicCookie >> 16)
+  err = binary.Write(buf, binary.BigEndian, xport)
   err = binary.Write(buf, binary.BigEndian, h.Address)
 
   if err != nil {
@@ -39,10 +40,22 @@ func (h *XorMappedAddressAttribute) Decode(data []byte, _ uint16, header *Header
     return errors.New("Mapped Address Attribute unexpectedly Truncated.")
   }
   h.Port = uint16(data[2]) << 8 + uint16(data[3])
+  // X-port is XOR'ed with the 16 most significant bits of the magic Cookie
+  h.Port ^= uint16(magicCookie >> 16)
+
+  var xoraddress []byte
   if h.Family == 1 {
+    xoraddress = make([]byte, 4)
+    binary.BigEndian.PutUint32(xoraddress, magicCookie)
     h.Address = data[4:8]
   } else {
+    xoraddress = make([]byte, 16)
+    binary.BigEndian.PutUint32(xoraddress, magicCookie)
+    copy(xoraddress[4:16], header.Id[:])
     h.Address = data[4:20]
+  }
+  for i, _ := range xoraddress {
+    h.Address[i] ^= xoraddress[i]
   }
   return nil
 }
