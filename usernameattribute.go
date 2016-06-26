@@ -14,7 +14,7 @@ func (h *UsernameAttribute) Type() (StunAttributeType) {
   return Username
 }
 
-func (h *UsernameAttribute) Encode() ([]byte, error) {
+func (h *UsernameAttribute) Encode(_ *StunMessage) ([]byte, error) {
   buf := new(bytes.Buffer)
   err := binary.Write(buf, binary.BigEndian, attributeHeader(StunAttribute(h)))
   err = binary.Write(buf, binary.BigEndian, h.Username)
@@ -25,7 +25,7 @@ func (h *UsernameAttribute) Encode() ([]byte, error) {
   return buf.Bytes(), nil
 }
 
-func (h *UsernameAttribute) Decode(data []byte, length uint16) (error) {
+func (h *UsernameAttribute) Decode(data []byte, length uint16, _ *Header) (error) {
   if uint16(len(data)) < length {
     return errors.New("Truncated Username Attribute")
   }

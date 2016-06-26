@@ -51,8 +51,8 @@ const (
 
 type StunAttribute interface {
   Type()          StunAttributeType
-  Encode()        ([]byte, error)
-  Decode([]byte, uint16)  error
+  Encode(*StunMessage)        ([]byte, error)
+  Decode([]byte, uint16, *Header)  error
   Length()        uint16
 }
 
@@ -105,7 +105,7 @@ func (h *Header) Decode(data []byte) (error) {
   return nil
 }
 
-func DecodeStunAttribute(data []byte) (*StunAttribute, error) {
+func DecodeStunAttribute(data []byte, header *Header) (*StunAttribute, error) {
   attributeType := binary.BigEndian.Uint16(data)
   length := binary.BigEndian.Uint16(data[2:])
   var result StunAttribute
@@ -121,7 +121,7 @@ func DecodeStunAttribute(data []byte) (*StunAttribute, error) {
     unknownAttr.ClaimedType = StunAttributeType(attributeType)
     result = unknownAttr
   }
-  err := result.Decode(data[4:], length)
+  err := result.Decode(data[4:], length, header)
   if err != nil {
     return nil, err
   } else if result.Length() != length {
@@ -146,7 +146,7 @@ func Parse(data []byte) (*StunMessage, error) {
     return nil, errors.New("Message has incorrect Length")
   }
   for len(data) > 0 {
-    attribute, err := DecodeStunAttribute(data)
+    attribute, err := DecodeStunAttribute(data, &message.Header)
     if err != nil {
       return nil, err
     }

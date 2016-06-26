@@ -17,7 +17,7 @@ func (h *XorMappedAddressAttribute) Type() (StunAttributeType) {
   return XorMappedAddress
 }
 
-func (h *XorMappedAddressAttribute) Encode() ([]byte, error) {
+func (h *XorMappedAddressAttribute) Encode(msg *StunMessage) ([]byte, error) {
   buf := new(bytes.Buffer)
   err := binary.Write(buf, binary.BigEndian, attributeHeader(StunAttribute(h)))
   err = binary.Write(buf, binary.BigEndian, h.Family)
@@ -30,7 +30,7 @@ func (h *XorMappedAddressAttribute) Encode() ([]byte, error) {
   return buf.Bytes(), nil
 }
 
-func (h *XorMappedAddressAttribute) Decode(data []byte, _ uint16) (error) {
+func (h *XorMappedAddressAttribute) Decode(data []byte, _ uint16, header *Header) (error) {
   if data[0] != 0 && data[1] != 1 && data[0] != 2 {
     return errors.New("Incorrect Mapped Address Family.")
   }
