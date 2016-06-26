@@ -16,7 +16,7 @@ func parseResponse(datagram []byte) {
     log.Fatal("Could not parse response:", err)
   }
 
-  if msg.Header.Class != turn.StunResponse {
+  if msg.Header.Type != turn.StunBindingResponse {
     log.Fatal("Response message is not a STUN response.", msg.Header)
   }
 
@@ -42,11 +42,10 @@ func main() {
   defer c.Close()
 
   // construct request message
-  var packet turn.StunMessage
-  if err = turn.MakeStunRequest(&packet.Header); err != nil {
-    log.Fatal("Failed to construct header: ", err)
+  packet,err := turn.NewStunBindingRequest()
+  if err != nil {
+    log.Fatal("Failed to generate request packet:", err)
   }
-  packet.Attributes = make([]turn.StunAttribute,0)
 
   message, err := packet.Serialize()
   if err != nil {

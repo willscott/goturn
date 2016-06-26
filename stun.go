@@ -12,24 +12,24 @@ const (
   magicCookie uint32 = 0x2112A442
 )
 
-type StunClass uint16
-const (
-  StunRequest StunClass = iota
-  StunIndication
-  StunResponse
-  StunError
-)
-
 type StunType uint16
 const (
-  StunBinding StunType = 1 + iota
+  StunBindingRequest StunType = 0x0001
+  StunSharedSecretRequest = 0x0002
+  StunBindingResponse = 0x0101
+  StunSharedSecretResponse = 0x0102
+  StunBindingError = 0x0111
+  StunSharedSecretError = 0x0112
 )
 
 type StunHeader struct {
-  Class   StunClass
   Type    StunType
   Length  uint16
   Id      [12]byte
+}
+
+func (h StunHeader) String() string {
+  return fmt.Sprintf("%T #%x [%db]", h.Type, h.Id, h.Length)
 }
 
 type StunAttributeType uint16
@@ -63,24 +63,9 @@ type StunMessage struct {
 
 
 func (h *StunHeader) Encode() ([]byte, error) {
-  var classEnc uint16 = 0
   buf := new(bytes.Buffer)
 
-  hType := uint16(h.Type)
-  hClass := uint16(h.Class)
-
-  //bits 0-3 are low bits of type
-  classEnc |= hType & 15
-  //bit 4 is low bit of class
-  classEnc |= (hClass & 1) << 4
-  //bits 5-7 are bits 4-6 of type
-  classEnc |= ((hType >> 4) & 7) << 5
-  //bit 8 is high bit of class
-  classEnc |= (hClass & 2) << 7
-  //bits 9-13 are high bits of type
-  classEnc |= ((hType >> 7) & 31) << 9
-
-  err := binary.Write(buf, binary.BigEndian, classEnc)
+  err := binary.Write(buf, binary.BigEndian, h.Type)
   err = binary.Write(buf, binary.BigEndian, h.Length)
   err = binary.Write(buf, binary.BigEndian, magicCookie)
   err = binary.Write(buf, binary.BigEndian, h.Id)
@@ -100,11 +85,8 @@ func (h *StunHeader) Decode(data []byte) (error) {
     return errors.New("Header Length Too Short")
   }
 
-  classEnc := binary.BigEndian.Uint16(data)
-  stunClass := StunClass(((classEnc & 4) >> 3) + ((classEnc & 8) >> 6))
-  stunType := StunType(classEnc & 15 + ((classEnc >> 5) & 7) << 4 + ((classEnc >> 9) & 31) << 7)
-
-  if classEnc >> 14 != 0 {
+  // Correctness checks.
+  if binary.BigEndian.Uint16(data[0:]) >> 14 != 0 {
     return errors.New("First 2 bits are not 0")
   }
 
@@ -116,8 +98,7 @@ func (h *StunHeader) Decode(data []byte) (error) {
     return errors.New("Message Length is not a multiple of 4")
   }
 
-  h.Type = stunType
-  h.Class = stunClass
+  h.Type = StunType(binary.BigEndian.Uint16(data[0:]))
   h.Length = binary.BigEndian.Uint16(data[2:])
   copy(h.Id[:], data[8:20])
 
@@ -189,9 +170,12 @@ func (m *StunMessage) Serialize() ([]byte, error) {
 }
 
 //Convienence functions for making commonly used data structures.
-func MakeStunRequest(header *StunHeader) (error) {
-  header.Class = StunRequest
-  header.Type = StunBinding
-  _, err := rand.Read(header.Id[:])
-  return err
+func NewStunBindingRequest() (*StunMessage, error) {
+  message := StunMessage {
+    Header: StunHeader {
+      Type: StunBindingRequest,
+    },
+  }
+  _, err := rand.Read(message.Header.Id[:])
+  return &message, err
 }
