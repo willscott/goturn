@@ -16,7 +16,7 @@ func parseResponse(datagram []byte) {
     log.Fatal("Could not parse response:", err)
   }
 
-  if msg.Header.Type != stun.StunBindingResponse {
+  if msg.Header.Type != stun.BindingResponse {
     log.Fatal("Response message is not a STUN response.", msg.Header)
   }
 

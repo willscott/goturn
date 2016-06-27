@@ -10,13 +10,13 @@ type MessageIntegrityAttribute struct {
   Hash []byte
 }
 
-func (h *MessageIntegrityAttribute) Type() (StunAttributeType) {
+func (h *MessageIntegrityAttribute) Type() (AttributeType) {
   return MessageIntegrity
 }
 
-func (h *MessageIntegrityAttribute) Encode(_ *StunMessage) ([]byte, error) {
+func (h *MessageIntegrityAttribute) Encode(_ *Message) ([]byte, error) {
   buf := new(bytes.Buffer)
-  err := binary.Write(buf, binary.BigEndian, attributeHeader(StunAttribute(h)))
+  err := binary.Write(buf, binary.BigEndian, attributeHeader(Attribute(h)))
   err = binary.Write(buf, binary.BigEndian, h.Hash)
 
   if err != nil {

@@ -12,13 +12,13 @@ type ErrorCodeAttribute struct {
   Phrase string
 }
 
-func (h *ErrorCodeAttribute) Type() (StunAttributeType) {
+func (h *ErrorCodeAttribute) Type() (AttributeType) {
   return ErrorCode
 }
 
-func (h *ErrorCodeAttribute) Encode(_ *StunMessage) ([]byte, error) {
+func (h *ErrorCodeAttribute) Encode(_ *Message) ([]byte, error) {
   buf := new(bytes.Buffer)
-  err := binary.Write(buf, binary.BigEndian, attributeHeader(StunAttribute(h)))
+  err := binary.Write(buf, binary.BigEndian, attributeHeader(Attribute(h)))
   err = binary.Write(buf, binary.BigEndian, uint16(0))
   err = binary.Write(buf, binary.BigEndian, h.Class)
   err = binary.Write(buf, binary.BigEndian, h.Number)

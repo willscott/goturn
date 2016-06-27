@@ -13,13 +13,13 @@ type MappedAddressAttribute struct {
   Address net.IP
 }
 
-func (h *MappedAddressAttribute) Type() (StunAttributeType) {
+func (h *MappedAddressAttribute) Type() (AttributeType) {
   return MappedAddress
 }
 
-func (h *MappedAddressAttribute) Encode(_ *StunMessage) ([]byte, error) {
+func (h *MappedAddressAttribute) Encode(_ *Message) ([]byte, error) {
   buf := new(bytes.Buffer)
-  err := binary.Write(buf, binary.BigEndian, attributeHeader(StunAttribute(h)))
+  err := binary.Write(buf, binary.BigEndian, attributeHeader(Attribute(h)))
   err = binary.Write(buf, binary.BigEndian, h.Family)
   err = binary.Write(buf, binary.BigEndian, h.Port)
   err = binary.Write(buf, binary.BigEndian, h.Address)

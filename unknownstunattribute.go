@@ -7,17 +7,17 @@ import (
 )
 
 type UnknownStunAttribute struct {
-  ClaimedType StunAttributeType
+  ClaimedType AttributeType
   Data []byte
 }
 
-func (h *UnknownStunAttribute) Type() (StunAttributeType) {
+func (h *UnknownStunAttribute) Type() (AttributeType) {
   return h.ClaimedType
 }
 
-func (h *UnknownStunAttribute) Encode(_ *StunMessage) ([]byte, error) {
+func (h *UnknownStunAttribute) Encode(_ *Message) ([]byte, error) {
   buf := new(bytes.Buffer)
-  err := binary.Write(buf, binary.BigEndian, attributeHeader(StunAttribute(h)))
+  err := binary.Write(buf, binary.BigEndian, attributeHeader(Attribute(h)))
   err = binary.Write(buf, binary.BigEndian, h.Data)
 
   if err != nil {

@@ -10,13 +10,13 @@ type FingerprintAttribute struct {
   CRC []byte
 }
 
-func (h *FingerprintAttribute) Type() (StunAttributeType) {
+func (h *FingerprintAttribute) Type() (AttributeType) {
   return Fingerprint
 }
 
-func (h *FingerprintAttribute) Encode(_ *StunMessage) ([]byte, error) {
+func (h *FingerprintAttribute) Encode(_ *Message) ([]byte, error) {
   buf := new(bytes.Buffer)
-  err := binary.Write(buf, binary.BigEndian, attributeHeader(StunAttribute(h)))
+  err := binary.Write(buf, binary.BigEndian, attributeHeader(Attribute(h)))
   err = binary.Write(buf, binary.BigEndian, h.CRC)
 
   if err != nil {

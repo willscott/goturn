@@ -13,13 +13,13 @@ type XorMappedAddressAttribute struct {
   Address net.IP
 }
 
-func (h *XorMappedAddressAttribute) Type() (StunAttributeType) {
+func (h *XorMappedAddressAttribute) Type() (AttributeType) {
   return XorMappedAddress
 }
 
-func (h *XorMappedAddressAttribute) Encode(msg *StunMessage) ([]byte, error) {
+func (h *XorMappedAddressAttribute) Encode(msg *Message) ([]byte, error) {
   buf := new(bytes.Buffer)
-  err := binary.Write(buf, binary.BigEndian, attributeHeader(StunAttribute(h)))
+  err := binary.Write(buf, binary.BigEndian, attributeHeader(Attribute(h)))
   err = binary.Write(buf, binary.BigEndian, h.Family)
   xport := h.Port ^ uint16(magicCookie >> 16)
   err = binary.Write(buf, binary.BigEndian, xport)

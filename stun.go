@@ -14,12 +14,12 @@ const (
 
 type HeaderType uint16
 const (
-  StunBindingRequest HeaderType = 0x0001
-  StunSharedSecretRequest = 0x0002
-  StunBindingResponse = 0x0101
-  StunSharedSecretResponse = 0x0102
-  StunBindingError = 0x0111
-  StunSharedSecretError = 0x0112
+  BindingRequest HeaderType = 0x0001
+  SharedSecretRequest = 0x0002
+  BindingResponse = 0x0101
+  SharedSecretResponse = 0x0102
+  BindingError = 0x0111
+  SharedSecretError = 0x0112
 )
 
 type Header struct {
@@ -32,9 +32,9 @@ func (h Header) String() string {
   return fmt.Sprintf("%T #%x [%db]", h.Type, h.Id, h.Length)
 }
 
-type StunAttributeType uint16
+type AttributeType uint16
 const (
-  MappedAddress StunAttributeType = 0x1
+  MappedAddress AttributeType = 0x1
   Username = 0x6
   MessageIntegrity = 0x8
   ErrorCode = 0x9
@@ -49,16 +49,16 @@ const (
   Fingerprint = 0x8028
 )
 
-type StunAttribute interface {
-  Type()          StunAttributeType
-  Encode(*StunMessage)        ([]byte, error)
+type Attribute interface {
+  Type()          AttributeType
+  Encode(*Message)        ([]byte, error)
   Decode([]byte, uint16, *Header)  error
   Length()        uint16
 }
 
-type StunMessage struct {
+type Message struct {
   Header
-  Attributes []StunAttribute
+  Attributes []Attribute
 }
 
 
@@ -105,11 +105,11 @@ func (h *Header) Decode(data []byte) (error) {
   return nil
 }
 
-func DecodeStunAttribute(data []byte, header *Header) (*StunAttribute, error) {
+func DecodeAttribute(data []byte, header *Header) (*Attribute, error) {
   attributeType := binary.BigEndian.Uint16(data)
   length := binary.BigEndian.Uint16(data[2:])
-  var result StunAttribute
-  switch StunAttributeType(attributeType) {
+  var result Attribute
+  switch AttributeType(attributeType) {
   case MappedAddress:
     result = new(MappedAddressAttribute)
   case XorMappedAddress:
@@ -118,7 +118,7 @@ func DecodeStunAttribute(data []byte, header *Header) (*StunAttribute, error) {
     result = new(UsernameAttribute)
   default:
     unknownAttr := new(UnknownStunAttribute)
-    unknownAttr.ClaimedType = StunAttributeType(attributeType)
+    unknownAttr.ClaimedType = AttributeType(attributeType)
     result = unknownAttr
   }
   err := result.Decode(data[4:], length, header)
@@ -130,14 +130,14 @@ func DecodeStunAttribute(data []byte, header *Header) (*StunAttribute, error) {
   return &result, nil
 }
 
-func attributeHeader(a StunAttribute) (uint32) {
+func attributeHeader(a Attribute) (uint32) {
   attributeType := uint16(a.Type())
   return (uint32(attributeType) << 16) + uint32(a.Length())
 }
 
-func Parse(data []byte) (*StunMessage, error) {
-  message := new(StunMessage)
-  message.Attributes = []StunAttribute{}
+func Parse(data []byte) (*Message, error) {
+  message := new(Message)
+  message.Attributes = []Attribute{}
   if err := message.Header.Decode(data); err != nil {
     return nil, err
   }
@@ -146,7 +146,7 @@ func Parse(data []byte) (*StunMessage, error) {
     return nil, errors.New("Message has incorrect Length")
   }
   for len(data) > 0 {
-    attribute, err := DecodeStunAttribute(data, &message.Header)
+    attribute, err := DecodeAttribute(data, &message.Header)
     if err != nil {
       return nil, err
     }
@@ -158,7 +158,7 @@ func Parse(data []byte) (*StunMessage, error) {
   return message, nil
 }
 
-func (m *StunMessage) Serialize() ([]byte, error) {
+func (m *Message) Serialize() ([]byte, error) {
   body := []byte{}
 
   // Calculate length.
@@ -172,10 +172,10 @@ func (m *StunMessage) Serialize() ([]byte, error) {
 }
 
 //Convienence functions for making commonly used data structures.
-func NewBindingRequest() (*StunMessage, error) {
-  message := StunMessage {
+func NewBindingRequest() (*Message, error) {
+  message := Message {
     Header: Header {
-      Type: StunBindingRequest,
+      Type: BindingRequest,
     },
   }
   _, err := rand.Read(message.Header.Id[:])

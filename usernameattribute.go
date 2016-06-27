@@ -10,13 +10,13 @@ type UsernameAttribute struct {
   Username string
 }
 
-func (h *UsernameAttribute) Type() (StunAttributeType) {
+func (h *UsernameAttribute) Type() (AttributeType) {
   return Username
 }
 
-func (h *UsernameAttribute) Encode(_ *StunMessage) ([]byte, error) {
+func (h *UsernameAttribute) Encode(_ *Message) ([]byte, error) {
   buf := new(bytes.Buffer)
-  err := binary.Write(buf, binary.BigEndian, attributeHeader(StunAttribute(h)))
+  err := binary.Write(buf, binary.BigEndian, attributeHeader(Attribute(h)))
   err = binary.Write(buf, binary.BigEndian, h.Username)
 
   if err != nil {
