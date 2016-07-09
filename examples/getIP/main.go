@@ -10,10 +10,10 @@ import (
 
 var server = flag.String("server", "stun.l.google.com:19302", "Remote Stun Server")
 
-func parseResponse(datagram []byte) {
+func parseResponse(datagram []byte) (address net.IP, port uint16) {
   msg, err := stun.Parse(datagram)
   if err != nil {
-    log.Fatal("Could not parse response:", err)
+    log.Fatal("Could not parse response as a STUN message:", err)
   }
 
   if msg.Header.Type != stun.BindingResponse {
@@ -23,16 +23,15 @@ func parseResponse(datagram []byte) {
   for _, attr := range msg.Attributes {
     if attr.Type() == stun.MappedAddress {
       addr := attr.(*stun.MappedAddressAttribute)
-      log.Printf("%s:%d", addr.Address, addr.Port)
-      return
+      return addr.Address, addr.Port
     } else if attr.Type() == stun.XorMappedAddress {
       addr := attr.(*stun.XorMappedAddressAttribute)
-      log.Printf("%s:%d", addr.Address, addr.Port)
-      return
+      return addr.Address, addr.Port
     }
   }
 
   log.Fatal("No MappedAddress in STUN response.")
+  return nil, 0
 }
 
 func main() {
@@ -69,5 +68,7 @@ func main() {
   if err != nil || n == 0 || n > 2048 {
     log.Fatal("Failed to read response: ", err)
   }
-  parseResponse(b[:n])
+
+  address, port := parseResponse(b[:n])
+  log.Printf("%s:%d", address, port)
 }
