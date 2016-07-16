@@ -43,7 +43,7 @@ func (h *ErrorCodeAttribute) Decode(data []byte, length uint16, _ *Header) (erro
   }
   h.Number = uint8(data[3])
   if h.Number > 99 {
-    return errors.New("Invlaid Error Code Number")
+    return errors.New("Invalid Error Code Number")
   }
   h.Phrase = string(data[4:length])
   return nil
