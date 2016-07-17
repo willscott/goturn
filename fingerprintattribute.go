@@ -12,7 +12,7 @@ const (
 )
 
 type FingerprintAttribute struct {
-	CRC []byte
+	CRC uint32
 }
 
 func (h *FingerprintAttribute) Type() AttributeType {
@@ -32,7 +32,7 @@ func (h *FingerprintAttribute) Encode(msg *Message) ([]byte, error) {
 	partialMsg.Attributes = partialMsg.Attributes[0 : len(partialMsg.Attributes)-1]
 
 	// Add a new attribute w/ same length as msg integrity
-	dummy := UnknownStunAttribute{MessageIntegrity, make([]byte, 4)}
+	dummy := UnknownStunAttribute{Fingerprint, make([]byte, 4)}
 	partialMsg.Attributes = append(partialMsg.Attributes, &dummy)
 	// calcualte the byte string
 	msgBytes, err := partialMsg.Serialize()
@@ -49,11 +49,32 @@ func (h *FingerprintAttribute) Encode(msg *Message) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func (h *FingerprintAttribute) Decode(data []byte, length uint16, _ *Message) error {
+func (h *FingerprintAttribute) Decode(data []byte, length uint16, msg *Message) error {
 	if length != 4 || len(data) < 4 {
 		return errors.New("Truncated Fingerprint Attribute")
 	}
-	h.CRC = data[0:4]
+	h.CRC = binary.BigEndian.Uint32(data[0:4])
+
+	// Calculate partial message
+	var partialMsg Message
+	partialMsg.Header = msg.Header
+	copy(partialMsg.Attributes, msg.Attributes)
+
+	// Add a new attribute w/ same length as fingerprint
+	dummy := UnknownStunAttribute{Fingerprint, make([]byte, 4)}
+	partialMsg.Attributes = append(partialMsg.Attributes, &dummy)
+	// calcualte the byte string
+	msgBytes, err := partialMsg.Serialize()
+	if err != nil {
+		return err
+	}
+
+	crc := crc32.ChecksumIEEE(msgBytes[0:len(msgBytes)-8]) ^ crcXOR
+
+	if crc != h.CRC {
+		return errors.New("Invalid Fingerprint value.")
+	}
+
 	return nil
 }
 
