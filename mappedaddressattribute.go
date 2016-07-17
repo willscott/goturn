@@ -17,9 +17,9 @@ func (h *MappedAddressAttribute) Type() AttributeType {
 	return MappedAddress
 }
 
-func (h *MappedAddressAttribute) Encode(_ *Message) ([]byte, error) {
+func (h *MappedAddressAttribute) Encode(msg *Message) ([]byte, error) {
 	buf := new(bytes.Buffer)
-	err := binary.Write(buf, binary.BigEndian, attributeHeader(Attribute(h)))
+	err := binary.Write(buf, binary.BigEndian, attributeHeader(Attribute(h), msg))
 	err = binary.Write(buf, binary.BigEndian, h.Family)
 	err = binary.Write(buf, binary.BigEndian, h.Port)
 	err = binary.Write(buf, binary.BigEndian, h.Address)
@@ -47,7 +47,7 @@ func (h *MappedAddressAttribute) Decode(data []byte, _ uint16, _ *Message) error
 	return nil
 }
 
-func (h *MappedAddressAttribute) Length() uint16 {
+func (h *MappedAddressAttribute) Length(_ *Message) uint16 {
 	if h.Family == 1 {
 		return 8
 	} else {

@@ -29,6 +29,12 @@ type Header struct {
 	Id     [12]byte
 }
 
+type Credentials struct {
+	Username string
+	Realm    string
+	Password string
+}
+
 func (h Header) String() string {
 	return fmt.Sprintf("%T #%x [%db]", h.Type, h.Id, h.Length)
 }
@@ -55,11 +61,12 @@ type Attribute interface {
 	Type() AttributeType
 	Encode(*Message) ([]byte, error)
 	Decode([]byte, uint16, *Message) error
-	Length() uint16
+	Length(*Message) uint16
 }
 
 type Message struct {
 	Header
+	Credentials
 	Attributes []Attribute
 }
 
@@ -125,19 +132,20 @@ func DecodeAttribute(data []byte, msg *Message) (*Attribute, error) {
 	err := result.Decode(data[4:], length, msg)
 	if err != nil {
 		return nil, err
-	} else if result.Length() != length {
+	} else if result.Length(msg) != length {
 		return nil, errors.New(fmt.Sprintf("Incorrect Length Specified for %T", result))
 	}
 	return &result, nil
 }
 
-func attributeHeader(a Attribute) uint32 {
+func attributeHeader(a Attribute, msg *Message) uint32 {
 	attributeType := uint16(a.Type())
-	return (uint32(attributeType) << 16) + uint32(a.Length())
+	return (uint32(attributeType) << 16) + uint32(a.Length(msg))
 }
 
-func Parse(data []byte) (*Message, error) {
+func Parse(data []byte, credentials Credentials) (*Message, error) {
 	message := new(Message)
+	message.Credentials = credentials
 	message.Attributes = []Attribute{}
 	if err := message.Header.Decode(data); err != nil {
 		return nil, err
@@ -153,7 +161,7 @@ func Parse(data []byte) (*Message, error) {
 		}
 		message.Attributes = append(message.Attributes, *attribute)
 		// 4 byte header and rounded up to next multiple of 4
-		len := 4 * int(((*attribute).Length()+7)/4)
+		len := 4 * int(((*attribute).Length(message)+7)/4)
 		data = data[len:]
 	}
 	return message, nil

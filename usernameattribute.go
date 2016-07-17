@@ -7,17 +7,16 @@ import (
 )
 
 type UsernameAttribute struct {
-	Username string
 }
 
 func (h *UsernameAttribute) Type() AttributeType {
 	return Username
 }
 
-func (h *UsernameAttribute) Encode(_ *Message) ([]byte, error) {
+func (h *UsernameAttribute) Encode(msg *Message) ([]byte, error) {
 	buf := new(bytes.Buffer)
-	err := binary.Write(buf, binary.BigEndian, attributeHeader(Attribute(h)))
-	err = binary.Write(buf, binary.BigEndian, h.Username)
+	err := binary.Write(buf, binary.BigEndian, attributeHeader(Attribute(h), msg))
+	err = binary.Write(buf, binary.BigEndian, msg.Credentials.Username)
 
 	if err != nil {
 		return nil, err
@@ -25,14 +24,14 @@ func (h *UsernameAttribute) Encode(_ *Message) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func (h *UsernameAttribute) Decode(data []byte, length uint16, _ *Message) error {
+func (h *UsernameAttribute) Decode(data []byte, length uint16, msg *Message) error {
 	if uint16(len(data)) < length {
 		return errors.New("Truncated Username Attribute")
 	}
-	h.Username = string(data[0:length])
+	msg.Credentials.Username = string(data[0:length])
 	return nil
 }
 
-func (h *UsernameAttribute) Length() uint16 {
-	return uint16(len(h.Username))
+func (h *UsernameAttribute) Length(msg *Message) uint16 {
+	return uint16(len(msg.Credentials.Username))
 }

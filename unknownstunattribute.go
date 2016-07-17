@@ -15,9 +15,9 @@ func (h *UnknownStunAttribute) Type() AttributeType {
 	return h.ClaimedType
 }
 
-func (h *UnknownStunAttribute) Encode(_ *Message) ([]byte, error) {
+func (h *UnknownStunAttribute) Encode(msg *Message) ([]byte, error) {
 	buf := new(bytes.Buffer)
-	err := binary.Write(buf, binary.BigEndian, attributeHeader(Attribute(h)))
+	err := binary.Write(buf, binary.BigEndian, attributeHeader(Attribute(h), msg))
 	err = binary.Write(buf, binary.BigEndian, h.Data)
 
 	if err != nil {
@@ -34,6 +34,6 @@ func (h *UnknownStunAttribute) Decode(data []byte, length uint16, _ *Message) er
 	return nil
 }
 
-func (h *UnknownStunAttribute) Length() uint16 {
+func (h *UnknownStunAttribute) Length(_ *Message) uint16 {
 	return uint16(len(h.Data))
 }

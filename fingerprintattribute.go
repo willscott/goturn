@@ -21,7 +21,7 @@ func (h *FingerprintAttribute) Type() AttributeType {
 
 func (h *FingerprintAttribute) Encode(msg *Message) ([]byte, error) {
 	buf := new(bytes.Buffer)
-	err := binary.Write(buf, binary.BigEndian, attributeHeader(Attribute(h)))
+	err := binary.Write(buf, binary.BigEndian, attributeHeader(Attribute(h), msg))
 
 	// Calculate partial message
 	var partialMsg Message
@@ -78,6 +78,6 @@ func (h *FingerprintAttribute) Decode(data []byte, length uint16, msg *Message) 
 	return nil
 }
 
-func (h *FingerprintAttribute) Length() uint16 {
+func (h *FingerprintAttribute) Length(_ *Message) uint16 {
 	return 4
 }

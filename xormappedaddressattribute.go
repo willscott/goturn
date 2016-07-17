@@ -19,7 +19,7 @@ func (h *XorMappedAddressAttribute) Type() AttributeType {
 
 func (h *XorMappedAddressAttribute) Encode(msg *Message) ([]byte, error) {
 	buf := new(bytes.Buffer)
-	err := binary.Write(buf, binary.BigEndian, attributeHeader(Attribute(h)))
+	err := binary.Write(buf, binary.BigEndian, attributeHeader(Attribute(h), msg))
 	err = binary.Write(buf, binary.BigEndian, h.Family)
 	xport := h.Port ^ uint16(magicCookie>>16)
 	err = binary.Write(buf, binary.BigEndian, xport)
@@ -73,7 +73,7 @@ func (h *XorMappedAddressAttribute) Decode(data []byte, _ uint16, msg *Message) 
 	return nil
 }
 
-func (h *XorMappedAddressAttribute) Length() uint16 {
+func (h *XorMappedAddressAttribute) Length(_ *Message) uint16 {
 	if h.Family == 1 {
 		return 8
 	} else {

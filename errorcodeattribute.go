@@ -16,9 +16,9 @@ func (h *ErrorCodeAttribute) Type() AttributeType {
 	return ErrorCode
 }
 
-func (h *ErrorCodeAttribute) Encode(_ *Message) ([]byte, error) {
+func (h *ErrorCodeAttribute) Encode(msg *Message) ([]byte, error) {
 	buf := new(bytes.Buffer)
-	err := binary.Write(buf, binary.BigEndian, attributeHeader(Attribute(h)))
+	err := binary.Write(buf, binary.BigEndian, attributeHeader(Attribute(h), msg))
 	err = binary.Write(buf, binary.BigEndian, uint16(0))
 	err = binary.Write(buf, binary.BigEndian, h.Class)
 	err = binary.Write(buf, binary.BigEndian, h.Number)
@@ -49,6 +49,6 @@ func (h *ErrorCodeAttribute) Decode(data []byte, length uint16, _ *Message) erro
 	return nil
 }
 
-func (h *ErrorCodeAttribute) Length() uint16 {
+func (h *ErrorCodeAttribute) Length(_ *Message) uint16 {
 	return uint16(4 + len(h.Phrase))
 }

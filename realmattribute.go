@@ -7,17 +7,16 @@ import (
 )
 
 type RealmAttribute struct {
-	Realm string
 }
 
 func (h *RealmAttribute) Type() AttributeType {
 	return Realm
 }
 
-func (h *RealmAttribute) Encode(_ *Message) ([]byte, error) {
+func (h *RealmAttribute) Encode(msg *Message) ([]byte, error) {
 	buf := new(bytes.Buffer)
-	err := binary.Write(buf, binary.BigEndian, attributeHeader(Attribute(h)))
-	err = binary.Write(buf, binary.BigEndian, h.Realm)
+	err := binary.Write(buf, binary.BigEndian, attributeHeader(Attribute(h), msg))
+	err = binary.Write(buf, binary.BigEndian, msg.Credentials.Realm)
 
 	if err != nil {
 		return nil, err
@@ -25,17 +24,17 @@ func (h *RealmAttribute) Encode(_ *Message) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func (h *RealmAttribute) Decode(data []byte, length uint16, _ *Message) error {
+func (h *RealmAttribute) Decode(data []byte, length uint16, msg *Message) error {
 	if uint16(len(data)) < length {
 		return errors.New("Truncated Realm Attribute")
 	}
 	if length > 763 {
 		return errors.New("Realm Length is too long")
 	}
-	h.Realm = string(data[0:length])
+	msg.Credentials.Realm = string(data[0:length])
 	return nil
 }
 
-func (h *RealmAttribute) Length() uint16 {
-	return uint16(len(h.Realm))
+func (h *RealmAttribute) Length(msg *Message) uint16 {
+	return uint16(len(msg.Credentials.Realm))
 }

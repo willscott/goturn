@@ -14,9 +14,9 @@ func (h *NonceAttribute) Type() AttributeType {
 	return Nonce
 }
 
-func (h *NonceAttribute) Encode(_ *Message) ([]byte, error) {
+func (h *NonceAttribute) Encode(msg *Message) ([]byte, error) {
 	buf := new(bytes.Buffer)
-	err := binary.Write(buf, binary.BigEndian, attributeHeader(Attribute(h)))
+	err := binary.Write(buf, binary.BigEndian, attributeHeader(Attribute(h), msg))
 	err = binary.Write(buf, binary.BigEndian, h.Nonce)
 
 	if err != nil {
@@ -36,6 +36,6 @@ func (h *NonceAttribute) Decode(data []byte, length uint16, _ *Message) error {
 	return nil
 }
 
-func (h *NonceAttribute) Length() uint16 {
+func (h *NonceAttribute) Length(_ *Message) uint16 {
 	return uint16(len(h.Nonce))
 }
