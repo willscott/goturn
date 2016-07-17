@@ -1,29 +1,29 @@
 package stun
 
 import (
-  "net"
-  "time"
+	"net"
+	"time"
 )
 
 // A TURN Dialer is a dialer implementation which dials through a TURN relay.
 type Dialer struct {
-  // The connection to the TURN Relay
-  net.Conn
+	// The connection to the TURN Relay
+	net.Conn
 
-  // Fields to implement a net.Dialer
-  Timeout time.Duration
-  Deadline time.Time
-  LocalAddr net.Addr
-  DualStack bool
-  FallbackDelay time.Duration
-  KeepAlive time.Duration
-  Cancel <-chan struct{}
+	// Fields to implement a net.Dialer
+	Timeout       time.Duration
+	Deadline      time.Time
+	LocalAddr     net.Addr
+	DualStack     bool
+	FallbackDelay time.Duration
+	KeepAlive     time.Duration
+	Cancel        <-chan struct{}
 }
 
 type turn struct {
-  user, password string
-  network, addr string
-  forward net.Dialer
+	user, password string
+	network, addr  string
+	forward        net.Dialer
 }
 
 // Create a TURN Dialer for a given relay.
