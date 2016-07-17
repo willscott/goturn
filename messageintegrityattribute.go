@@ -69,7 +69,7 @@ func (h *MessageIntegrityAttribute) Encode(msg *Message) ([]byte, error) {
   return buf.Bytes(), nil
 }
 
-func (h *MessageIntegrityAttribute) Decode(data []byte, length uint16, _ *Header) (error) {
+func (h *MessageIntegrityAttribute) Decode(data []byte, length uint16, _ *Message) (error) {
   if length != 20 || len(data) < 20 {
     return errors.New("Truncated MessageIntegrity Attribute")
   }

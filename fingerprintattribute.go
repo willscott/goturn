@@ -49,7 +49,7 @@ func (h *FingerprintAttribute) Encode(msg *Message) ([]byte, error) {
   return buf.Bytes(), nil
 }
 
-func (h *FingerprintAttribute) Decode(data []byte, length uint16, _ *Header) (error) {
+func (h *FingerprintAttribute) Decode(data []byte, length uint16, _ *Message) (error) {
   if length != 4 || len(data) < 4 {
     return errors.New("Truncated Fingerprint Attribute")
   }

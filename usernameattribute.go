@@ -25,7 +25,7 @@ func (h *UsernameAttribute) Encode(_ *Message) ([]byte, error) {
   return buf.Bytes(), nil
 }
 
-func (h *UsernameAttribute) Decode(data []byte, length uint16, _ *Header) (error) {
+func (h *UsernameAttribute) Decode(data []byte, length uint16, _ *Message) (error) {
   if uint16(len(data)) < length {
     return errors.New("Truncated Username Attribute")
   }

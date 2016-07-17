@@ -30,7 +30,7 @@ func (h *ErrorCodeAttribute) Encode(_ *Message) ([]byte, error) {
   return buf.Bytes(), nil
 }
 
-func (h *ErrorCodeAttribute) Decode(data []byte, length uint16, _ *Header) (error) {
+func (h *ErrorCodeAttribute) Decode(data []byte, length uint16, _ *Message) (error) {
   if len(data) < 4 || len(data) > 65535 || uint16(len(data)) < length {
     return errors.New("Truncated Error Code Attribute")
   }

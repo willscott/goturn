@@ -52,7 +52,7 @@ const (
 type Attribute interface {
   Type()          AttributeType
   Encode(*Message)        ([]byte, error)
-  Decode([]byte, uint16, *Header)  error
+  Decode([]byte, uint16, *Message)  error
   Length()        uint16
 }
 
@@ -105,7 +105,7 @@ func (h *Header) Decode(data []byte) (error) {
   return nil
 }
 
-func DecodeAttribute(data []byte, header *Header) (*Attribute, error) {
+func DecodeAttribute(data []byte, msg *Message) (*Attribute, error) {
   attributeType := binary.BigEndian.Uint16(data)
   length := binary.BigEndian.Uint16(data[2:])
   var result Attribute
@@ -121,7 +121,7 @@ func DecodeAttribute(data []byte, header *Header) (*Attribute, error) {
     unknownAttr.ClaimedType = AttributeType(attributeType)
     result = unknownAttr
   }
-  err := result.Decode(data[4:], length, header)
+  err := result.Decode(data[4:], length, msg)
   if err != nil {
     return nil, err
   } else if result.Length() != length {
@@ -146,7 +146,7 @@ func Parse(data []byte) (*Message, error) {
     return nil, errors.New("Message has incorrect Length")
   }
   for len(data) > 0 {
-    attribute, err := DecodeAttribute(data, &message.Header)
+    attribute, err := DecodeAttribute(data, message)
     if err != nil {
       return nil, err
     }

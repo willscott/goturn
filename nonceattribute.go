@@ -25,7 +25,7 @@ func (h *NonceAttribute) Encode(_ *Message) ([]byte, error) {
   return buf.Bytes(), nil
 }
 
-func (h *NonceAttribute) Decode(data []byte, length uint16, _ *Header) (error) {
+func (h *NonceAttribute) Decode(data []byte, length uint16, _ *Message) (error) {
   if uint16(len(data)) < length {
     return errors.New("Truncated Nonce Attribute")
   }

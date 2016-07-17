@@ -44,7 +44,7 @@ func (h *XorMappedAddressAttribute) Encode(msg *Message) ([]byte, error) {
   return buf.Bytes(), nil
 }
 
-func (h *XorMappedAddressAttribute) Decode(data []byte, _ uint16, header *Header) (error) {
+func (h *XorMappedAddressAttribute) Decode(data []byte, _ uint16, msg *Message) (error) {
   if data[0] != 0 && data[1] != 1 && data[0] != 2 {
     return errors.New("Incorrect Mapped Address Family.")
   }
@@ -64,7 +64,7 @@ func (h *XorMappedAddressAttribute) Decode(data []byte, _ uint16, header *Header
   } else {
     xoraddress = make([]byte, 16)
     binary.BigEndian.PutUint32(xoraddress, magicCookie)
-    copy(xoraddress[4:16], header.Id[:])
+    copy(xoraddress[4:16], msg.Header.Id[:])
     h.Address = data[4:20]
   }
   for i, _ := range xoraddress {
