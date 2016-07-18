@@ -118,12 +118,22 @@ func DecodeAttribute(data []byte, msg *Message) (*Attribute, error) {
 	length := binary.BigEndian.Uint16(data[2:])
 	var result Attribute
 	switch AttributeType(attributeType) {
+	case ErrorCode:
+		result = new(ErrorCodeAttribute)
+	case Fingerprint:
+		result = new(FingerprintAttribute)
 	case MappedAddress:
 		result = new(MappedAddressAttribute)
-	case XorMappedAddress:
-		result = new(XorMappedAddressAttribute)
+	case MessageIntegrity:
+		result = new(MessageIntegrityAttribute)
+	case Nonce:
+		result = new(NonceAttribute)
+	case Realm:
+		result = new(RealmAttribute)
 	case Username:
 		result = new(UsernameAttribute)
+	case XorMappedAddress:
+		result = new(XorMappedAddressAttribute)
 	default:
 		unknownAttr := new(UnknownStunAttribute)
 		unknownAttr.ClaimedType = AttributeType(attributeType)
