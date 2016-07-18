@@ -1,6 +1,8 @@
 package turn
 
 import (
+	"crypto/rand"
+
 	"github.com/willscott/goturn"
 )
 
@@ -36,4 +38,18 @@ const (
 func attributeHeader(a stun.Attribute, msg *stun.Message) uint32 {
 	attributeType := uint16(a.Type())
 	return (uint32(attributeType) << 16) + uint32(a.Length(msg))
+}
+
+func NewAllocateRequest() (*stun.Message, error) {
+	message := stun.Message{
+		Header: stun.Header{
+			Type: AllocateRequest,
+		},
+	}
+	_, err := rand.Read(message.Header.Id[:])
+
+	//Include a RequestedTransportAttribute = UDP
+	message.Attributes = []stun.Attribute{&RequestedTransportAttribute{17}}
+
+	return &message, err
 }

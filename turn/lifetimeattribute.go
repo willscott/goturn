@@ -15,7 +15,7 @@ func (h *LifetimeAttribute) Type() stun.AttributeType {
 	return Lifetime
 }
 
-func (h *LifetimeAttribute) Encode(_ *stun.Message) ([]byte, error) {
+func (h *LifetimeAttribute) Encode(msg *stun.Message) ([]byte, error) {
 	buf := new(bytes.Buffer)
 	err := binary.Write(buf, binary.BigEndian, attributeHeader(stun.Attribute(h), msg))
 	err = binary.Write(buf, binary.BigEndian, h.Lifetime)
@@ -30,7 +30,7 @@ func (h *LifetimeAttribute) Decode(data []byte, length uint16, _ *stun.Message) 
 	if uint16(len(data)) < length {
 		return errors.New("Truncated Username Attribute")
 	}
-  h.Lifetime = uint32(data[0:4])
+  h.Lifetime = binary.BigEndian.Uint32(data[0:4])
 	return nil
 }
 
