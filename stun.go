@@ -178,7 +178,22 @@ func Parse(data []byte, credentials Credentials) (*Message, error) {
 }
 
 func (m *Message) Serialize() ([]byte, error) {
-	body := []byte{}
+	var bodylength uint16
+	for _, att := range m.Attributes {
+		bodylength += att.Length(m)
+	}
+
+	body := make([]byte, bodylength)
+	bodylength = 0
+	for _, att := range m.Attributes {
+		attLen := att.Length(m)
+		if attBody, err := att.Encode(m); err != nil {
+			return nil, err
+		} else {
+			copy(body[bodylength:bodylength+attLen], attBody[:])
+		}
+		bodylength += attLen
+	}
 
 	// Calculate length.
 	m.Header.Length = uint16(len(body))
