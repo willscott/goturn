@@ -11,7 +11,7 @@ import (
 var server = flag.String("server", "stun.l.google.com:19302", "Remote Stun Server")
 
 func parseResponse(datagram []byte) (address net.IP, port uint16) {
-  msg, err := stun.Parse(datagram)
+  msg, err := stun.Parse(datagram, stun.Credentials{})
   if err != nil {
     log.Fatal("Could not parse response as a STUN message:", err)
   }

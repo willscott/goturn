@@ -205,6 +205,15 @@ func (m *Message) Serialize() ([]byte, error) {
 	return data, nil
 }
 
+func (m *Message) GetAttribute(oftype AttributeType) (*Attribute) {
+	for _, att := range m.Attributes {
+		if att.Type() == oftype {
+			return &att
+		}
+	}
+	return nil
+}
+
 //Convienence functions for making commonly used data structures.
 func NewBindingRequest() (*Message, error) {
 	message := Message{
