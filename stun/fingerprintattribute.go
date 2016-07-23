@@ -4,27 +4,35 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	"github.com/willscott/goturn/common"
 	"hash/crc32"
 )
 
 const (
 	crcXOR uint32 = 0x5354554e
 )
+const (
+	Fingerprint stun.AttributeType = 0x8028
+)
 
 type FingerprintAttribute struct {
 	CRC uint32
 }
 
-func (h *FingerprintAttribute) Type() AttributeType {
+func NewFingerprintAttribute() stun.Attribute {
+	return stun.Attribute(new(FingerprintAttribute))
+}
+
+func (h *FingerprintAttribute) Type() stun.AttributeType {
 	return Fingerprint
 }
 
-func (h *FingerprintAttribute) Encode(msg *Message) ([]byte, error) {
+func (h *FingerprintAttribute) Encode(msg *stun.Message) ([]byte, error) {
 	buf := new(bytes.Buffer)
-	err := binary.Write(buf, binary.BigEndian, attributeHeader(Attribute(h), msg))
+	err := stun.WriteHeader(buf, stun.Attribute(h), msg)
 
 	// Calculate partial message
-	var partialMsg Message
+	var partialMsg stun.Message
 	partialMsg.Header = msg.Header
 	copy(partialMsg.Attributes, msg.Attributes)
 
@@ -32,7 +40,7 @@ func (h *FingerprintAttribute) Encode(msg *Message) ([]byte, error) {
 	partialMsg.Attributes = partialMsg.Attributes[0 : len(partialMsg.Attributes)-1]
 
 	// Add a new attribute w/ same length as msg integrity
-	dummy := UnknownStunAttribute{Fingerprint, make([]byte, 4)}
+	dummy := stun.UnknownStunAttribute{Fingerprint, make([]byte, 4)}
 	partialMsg.Attributes = append(partialMsg.Attributes, &dummy)
 	// calcualte the byte string
 	msgBytes, err := partialMsg.Serialize()
@@ -49,19 +57,19 @@ func (h *FingerprintAttribute) Encode(msg *Message) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func (h *FingerprintAttribute) Decode(data []byte, length uint16, msg *Message) error {
+func (h *FingerprintAttribute) Decode(data []byte, length uint16, msg *stun.Message) error {
 	if length != 4 || len(data) < 4 {
 		return errors.New("Truncated Fingerprint Attribute")
 	}
 	h.CRC = binary.BigEndian.Uint32(data[0:4])
 
 	// Calculate partial message
-	var partialMsg Message
+	var partialMsg stun.Message
 	partialMsg.Header = msg.Header
 	copy(partialMsg.Attributes, msg.Attributes)
 
 	// Add a new attribute w/ same length as fingerprint
-	dummy := UnknownStunAttribute{Fingerprint, make([]byte, 4)}
+	dummy := stun.UnknownStunAttribute{Fingerprint, make([]byte, 4)}
 	partialMsg.Attributes = append(partialMsg.Attributes, &dummy)
 	// calcualte the byte string
 	msgBytes, err := partialMsg.Serialize()
@@ -78,6 +86,6 @@ func (h *FingerprintAttribute) Decode(data []byte, length uint16, msg *Message) 
 	return nil
 }
 
-func (h *FingerprintAttribute) Length(_ *Message) uint16 {
+func (h *FingerprintAttribute) Length(_ *stun.Message) uint16 {
 	return 4
 }

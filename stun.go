@@ -1,162 +1,29 @@
-package stun
+package goturn
 
 import (
-	"bytes"
 	"crypto/rand"
-	"encoding/binary"
 	"errors"
-	"fmt"
+	common "github.com/willscott/goturn/common"
+	"github.com/willscott/goturn/stun"
 )
 
 const (
-	magicCookie uint32 = 0x2112A442
+	BindingRequest       common.HeaderType = 0x0001
+	SharedSecretRequest                    = 0x0002
+	BindingResponse                        = 0x0101
+	SharedSecretResponse                   = 0x0102
+	BindingError                           = 0x0111
+	SharedSecretError                      = 0x0112
 )
-
-type HeaderType uint16
 
 const (
-	BindingRequest       HeaderType = 0x0001
-	SharedSecretRequest             = 0x0002
-	BindingResponse                 = 0x0101
-	SharedSecretResponse            = 0x0102
-	BindingError                    = 0x0111
-	SharedSecretError               = 0x0112
+	AlternateServer common.AttributeType = 0x8023
 )
 
-type Header struct {
-	Type   HeaderType
-	Length uint16
-	Id     [12]byte
-}
-
-type Credentials struct {
-	Username string
-	Realm    string
-	Password string
-}
-
-func (h Header) String() string {
-	return fmt.Sprintf("%T #%x [%db]", h.Type, h.Id, h.Length)
-}
-
-type AttributeType uint16
-
-const (
-	MappedAddress     AttributeType = 0x1
-	Username                        = 0x6
-	MessageIntegrity                = 0x8
-	ErrorCode                       = 0x9
-	UnknownAttributes               = 0xA
-	Realm                           = 0x14
-	Nonce                           = 0x15
-	XorMappedAddress                = 0x20
-
-	// comprehension-optional attributes
-	Software        = 0x8022
-	AlternateServer = 0x8023
-	Fingerprint     = 0x8028
-)
-
-type Attribute interface {
-	Type() AttributeType
-	Encode(*Message) ([]byte, error)
-	Decode([]byte, uint16, *Message) error
-	Length(*Message) uint16
-}
-
-type Message struct {
-	Header
-	Credentials
-	Attributes []Attribute
-}
-
-func (h *Header) Encode() ([]byte, error) {
-	buf := new(bytes.Buffer)
-
-	err := binary.Write(buf, binary.BigEndian, h.Type)
-	err = binary.Write(buf, binary.BigEndian, h.Length)
-	err = binary.Write(buf, binary.BigEndian, magicCookie)
-	err = binary.Write(buf, binary.BigEndian, h.Id)
-
-	if len(h.Id) != 12 {
-		return nil, errors.New("Unsupported Transaction ID Length")
-	}
-
-	if err != nil {
-		return nil, err
-	}
-	return buf.Bytes(), nil
-}
-
-func (h *Header) Decode(data []byte) error {
-	if len(data) < 20 {
-		return errors.New("Header Length Too Short")
-	}
-
-	// Correctness checks.
-	if binary.BigEndian.Uint16(data[0:])>>14 != 0 {
-		return errors.New("First 2 bits are not 0")
-	}
-
-	if binary.BigEndian.Uint32(data[4:]) != magicCookie {
-		return errors.New("Bad Magic Cookie")
-	}
-
-	if binary.BigEndian.Uint16(data[2:])&3 != 0 {
-		return errors.New("Message Length is not a multiple of 4")
-	}
-
-	h.Type = HeaderType(binary.BigEndian.Uint16(data[0:]))
-	h.Length = binary.BigEndian.Uint16(data[2:])
-	copy(h.Id[:], data[8:20])
-
-	return nil
-}
-
-func DecodeAttribute(data []byte, msg *Message) (*Attribute, error) {
-	attributeType := binary.BigEndian.Uint16(data)
-	length := binary.BigEndian.Uint16(data[2:])
-	var result Attribute
-	switch AttributeType(attributeType) {
-	case ErrorCode:
-		result = new(ErrorCodeAttribute)
-	case Fingerprint:
-		result = new(FingerprintAttribute)
-	case MappedAddress:
-		result = new(MappedAddressAttribute)
-	case MessageIntegrity:
-		result = new(MessageIntegrityAttribute)
-	case Nonce:
-		result = new(NonceAttribute)
-	case Realm:
-		result = new(RealmAttribute)
-	case Username:
-		result = new(UsernameAttribute)
-	case XorMappedAddress:
-		result = new(XorMappedAddressAttribute)
-	default:
-		unknownAttr := new(UnknownStunAttribute)
-		unknownAttr.ClaimedType = AttributeType(attributeType)
-		result = unknownAttr
-	}
-	err := result.Decode(data[4:], length, msg)
-	if err != nil {
-		return nil, err
-	} else if result.Length(msg) != length {
-		return nil, errors.New(fmt.Sprintf("Incorrect Length Specified for %T", result))
-	}
-	return &result, nil
-}
-
-func attributeHeader(a Attribute, msg *Message) uint32 {
-	attributeType := uint16(a.Type())
-	return (uint32(attributeType) << 16) + uint32(a.Length(msg))
-}
-
-func Parse(data []byte, credentials Credentials) (*Message, error) {
-	message := new(Message)
+func Parse(data []byte, credentials common.Credentials, attrs common.AttributeSet) (*common.Message, error) {
+	message := new(common.Message)
 	message.Credentials = credentials
-	message.Attributes = []Attribute{}
+	message.Attributes = []common.Attribute{}
 	if err := message.Header.Decode(data); err != nil {
 		return nil, err
 	}
@@ -165,7 +32,7 @@ func Parse(data []byte, credentials Credentials) (*Message, error) {
 		return nil, errors.New("Message has incorrect Length")
 	}
 	for len(data) > 0 {
-		attribute, err := DecodeAttribute(data, message)
+		attribute, err := common.DecodeAttribute(data, attrs, message)
 		if err != nil {
 			return nil, err
 		}
@@ -177,47 +44,14 @@ func Parse(data []byte, credentials Credentials) (*Message, error) {
 	return message, nil
 }
 
-func (m *Message) Serialize() ([]byte, error) {
-	var bodylength uint16
-	for _, att := range m.Attributes {
-		bodylength += att.Length(m)
-	}
-
-	body := make([]byte, bodylength)
-	bodylength = 0
-	for _, att := range m.Attributes {
-		attLen := att.Length(m)
-		if attBody, err := att.Encode(m); err != nil {
-			return nil, err
-		} else {
-			copy(body[bodylength:bodylength+attLen], attBody[:])
-		}
-		bodylength += attLen
-	}
-
-	// Calculate length.
-	m.Header.Length = uint16(len(body))
-	head, err := m.Header.Encode()
-	if err != nil {
-		return nil, err
-	}
-	data := append(head, body...)
-	return data, nil
-}
-
-func (m *Message) GetAttribute(oftype AttributeType) (*Attribute) {
-	for _, att := range m.Attributes {
-		if att.Type() == oftype {
-			return &att
-		}
-	}
-	return nil
+func ParseStun(data []byte) (*common.Message, error) {
+	return Parse(data, common.Credentials{}, stun.StunAttributes)
 }
 
 //Convienence functions for making commonly used data structures.
-func NewBindingRequest() (*Message, error) {
-	message := Message{
-		Header: Header{
+func NewBindingRequest() (*common.Message, error) {
+	message := common.Message{
+		Header: common.Header{
 			Type: BindingRequest,
 		},
 	}

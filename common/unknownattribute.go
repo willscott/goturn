@@ -11,13 +11,17 @@ type UnknownStunAttribute struct {
 	Data        []byte
 }
 
+func NewUnknownAttribute() Attribute {
+	return Attribute(new(UnknownStunAttribute))
+}
+
 func (h *UnknownStunAttribute) Type() AttributeType {
 	return h.ClaimedType
 }
 
 func (h *UnknownStunAttribute) Encode(msg *Message) ([]byte, error) {
 	buf := new(bytes.Buffer)
-	err := binary.Write(buf, binary.BigEndian, attributeHeader(Attribute(h), msg))
+	err := WriteHeader(buf, Attribute(h), msg)
 	err = binary.Write(buf, binary.BigEndian, h.Data)
 
 	if err != nil {

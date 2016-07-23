@@ -4,11 +4,19 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
-  "github.com/willscott/goturn"
+	"github.com/willscott/goturn/common"
+)
+
+const (
+	Lifetime stun.AttributeType = 0xD
 )
 
 type LifetimeAttribute struct {
-  Lifetime uint32
+	Lifetime uint32
+}
+
+func NewLifetimeAttribute() stun.Attribute {
+	return stun.Attribute(new(LifetimeAttribute))
 }
 
 func (h *LifetimeAttribute) Type() stun.AttributeType {
@@ -17,7 +25,7 @@ func (h *LifetimeAttribute) Type() stun.AttributeType {
 
 func (h *LifetimeAttribute) Encode(msg *stun.Message) ([]byte, error) {
 	buf := new(bytes.Buffer)
-	err := binary.Write(buf, binary.BigEndian, attributeHeader(stun.Attribute(h), msg))
+	err := stun.WriteHeader(buf, stun.Attribute(h), msg)
 	err = binary.Write(buf, binary.BigEndian, h.Lifetime)
 
 	if err != nil {
@@ -30,7 +38,7 @@ func (h *LifetimeAttribute) Decode(data []byte, length uint16, _ *stun.Message) 
 	if uint16(len(data)) < length {
 		return errors.New("Truncated Username Attribute")
 	}
-  h.Lifetime = binary.BigEndian.Uint32(data[0:4])
+	h.Lifetime = binary.BigEndian.Uint32(data[0:4])
 	return nil
 }
 

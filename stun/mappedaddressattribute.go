@@ -4,7 +4,12 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	"github.com/willscott/goturn/common"
 	"net"
+)
+
+const (
+	MappedAddress stun.AttributeType = 0x1
 )
 
 type MappedAddressAttribute struct {
@@ -13,13 +18,17 @@ type MappedAddressAttribute struct {
 	Address net.IP
 }
 
-func (h *MappedAddressAttribute) Type() AttributeType {
+func NewMappedAddressAttribute() stun.Attribute {
+	return stun.Attribute(new(MappedAddressAttribute))
+}
+
+func (h *MappedAddressAttribute) Type() stun.AttributeType {
 	return MappedAddress
 }
 
-func (h *MappedAddressAttribute) Encode(msg *Message) ([]byte, error) {
+func (h *MappedAddressAttribute) Encode(msg *stun.Message) ([]byte, error) {
 	buf := new(bytes.Buffer)
-	err := binary.Write(buf, binary.BigEndian, attributeHeader(Attribute(h), msg))
+	err := stun.WriteHeader(buf, stun.Attribute(h), msg)
 	err = binary.Write(buf, binary.BigEndian, h.Family)
 	err = binary.Write(buf, binary.BigEndian, h.Port)
 	err = binary.Write(buf, binary.BigEndian, h.Address)
@@ -30,7 +39,7 @@ func (h *MappedAddressAttribute) Encode(msg *Message) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func (h *MappedAddressAttribute) Decode(data []byte, _ uint16, _ *Message) error {
+func (h *MappedAddressAttribute) Decode(data []byte, _ uint16, _ *stun.Message) error {
 	if data[0] != 0 && data[1] != 1 && data[0] != 2 {
 		return errors.New("Incorrect Mapped Address Family.")
 	}
@@ -47,7 +56,7 @@ func (h *MappedAddressAttribute) Decode(data []byte, _ uint16, _ *Message) error
 	return nil
 }
 
-func (h *MappedAddressAttribute) Length(_ *Message) uint16 {
+func (h *MappedAddressAttribute) Length(_ *stun.Message) uint16 {
 	if h.Family == 1 {
 		return 8
 	} else {
