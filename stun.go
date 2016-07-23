@@ -16,6 +16,7 @@ const (
 	SharedSecretError                      = 0x0112
 )
 
+//Deprecated. Should live in individual stun attribute implementations.
 const (
 	AlternateServer common.AttributeType = 0x8023
 )

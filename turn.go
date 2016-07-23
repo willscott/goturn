@@ -24,6 +24,7 @@ const (
 	ChannelBindError                           = 0x0119
 )
 
+//Deprecated. Should live in individual turn attribute implementations.
 const (
 	ChannelNumber      common.AttributeType = 0xC
 	Lifetime                                = 0xD
@@ -37,7 +38,7 @@ const (
 )
 
 func ParseTurn(data []byte, credentials common.Credentials) (*common.Message, error) {
-	return Parse(data, credentials, turn.TurnAttributes)
+	return Parse(data, credentials, turn.AttributeSet())
 }
 
 func NewAllocateRequest() (*common.Message, error) {

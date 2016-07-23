@@ -33,6 +33,11 @@ func (m *Message) Serialize() ([]byte, error) {
 	return data, nil
 }
 
-func (m *Message) NewAttributeOfType(typ AttributeType) *Attribute {
-	return nil
+func (m *Message) GetAttribute(typ AttributeType) *Attribute {
+  for _, att := range m.Attributes {
+    if att.Type() == typ {
+      return &att
+    }
+  }
+  return nil
 }
