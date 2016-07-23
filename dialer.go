@@ -1,4 +1,4 @@
-package stun
+package goturn
 
 import (
 	"net"
@@ -18,12 +18,6 @@ type Dialer struct {
 	FallbackDelay time.Duration
 	KeepAlive     time.Duration
 	Cancel        <-chan struct{}
-}
-
-type turn struct {
-	user, password string
-	network, addr  string
-	forward        net.Dialer
 }
 
 // Create a TURN Dialer for a given relay.

@@ -7,16 +7,25 @@ import (
 	"crypto/sha1"
 	"encoding/binary"
 	"errors"
+	"github.com/willscott/goturn/common"
+)
+
+const (
+	MessageIntegrity stun.AttributeType = 0x8
 )
 
 type MessageIntegrityAttribute struct {
 }
 
-func (h *MessageIntegrityAttribute) Type() AttributeType {
+func NewMessageIntegrityAttribute() stun.Attribute {
+	return stun.Attribute(new(MessageIntegrityAttribute))
+}
+
+func (h *MessageIntegrityAttribute) Type() stun.AttributeType {
 	return MessageIntegrity
 }
 
-func makeKey(msg *Message) []byte {
+func makeKey(msg *stun.Message) []byte {
 	var key []byte
 	if len(msg.Credentials.Username) > 0 {
 		sum := md5.Sum([]byte(msg.Credentials.Username + ":" + msg.Credentials.Realm + ":" + msg.Credentials.Password))
@@ -29,9 +38,9 @@ func makeKey(msg *Message) []byte {
 	}
 }
 
-func (h *MessageIntegrityAttribute) Encode(msg *Message) ([]byte, error) {
+func (h *MessageIntegrityAttribute) Encode(msg *stun.Message) ([]byte, error) {
 	buf := new(bytes.Buffer)
-	if err := binary.Write(buf, binary.BigEndian, attributeHeader(Attribute(h), msg)); err != nil {
+	if err := stun.WriteHeader(buf, stun.Attribute(h), msg); err != nil {
 		return nil, err
 	}
 
@@ -41,7 +50,7 @@ func (h *MessageIntegrityAttribute) Encode(msg *Message) ([]byte, error) {
 	}
 
 	// Calculate partial message
-	var partialMsg Message
+	var partialMsg stun.Message
 	partialMsg.Header = msg.Header
 	copy(partialMsg.Attributes, msg.Attributes)
 
@@ -51,7 +60,7 @@ func (h *MessageIntegrityAttribute) Encode(msg *Message) ([]byte, error) {
 		partialMsg.Attributes = partialMsg.Attributes[0 : len(partialMsg.Attributes)-1]
 	}
 	// Add a new attribute w/ same length as msg integrity
-	dummy := UnknownStunAttribute{MessageIntegrity, make([]byte, 20)}
+	dummy := stun.UnknownStunAttribute{MessageIntegrity, make([]byte, 20)}
 	partialMsg.Attributes = append(partialMsg.Attributes, &dummy)
 	// calcualte the byte string
 	msgBytes, err := partialMsg.Serialize()
@@ -72,19 +81,19 @@ func (h *MessageIntegrityAttribute) Encode(msg *Message) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func (h *MessageIntegrityAttribute) Decode(data []byte, length uint16, msg *Message) error {
+func (h *MessageIntegrityAttribute) Decode(data []byte, length uint16, msg *stun.Message) error {
 	if length != 20 || len(data) < 20 {
 		return errors.New("Truncated MessageIntegrity Attribute")
 	}
 
 	key := makeKey(msg)
 	// Calculate partial message
-	var partialMsg Message
+	var partialMsg stun.Message
 	partialMsg.Header = msg.Header
 	copy(partialMsg.Attributes, msg.Attributes)
 
 	// Add a new attribute w/ same length as fingerprint
-	dummy := UnknownStunAttribute{MessageIntegrity, make([]byte, 20)}
+	dummy := stun.UnknownStunAttribute{MessageIntegrity, make([]byte, 20)}
 	partialMsg.Attributes = append(partialMsg.Attributes, &dummy)
 	// calcualte the byte string
 	msgBytes, err := partialMsg.Serialize()
@@ -104,6 +113,6 @@ func (h *MessageIntegrityAttribute) Decode(data []byte, length uint16, msg *Mess
 	return nil
 }
 
-func (h *MessageIntegrityAttribute) Length(_ *Message) uint16 {
+func (h *MessageIntegrityAttribute) Length(_ *stun.Message) uint16 {
 	return 20
 }

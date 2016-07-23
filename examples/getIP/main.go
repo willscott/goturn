@@ -3,6 +3,7 @@ package main
 import (
   "flag"
   "github.com/willscott/goturn"
+  "github.com/willscott/goturn/stun"
   "log"
   "net"
   "time"
@@ -11,12 +12,12 @@ import (
 var server = flag.String("server", "stun.l.google.com:19302", "Remote Stun Server")
 
 func parseResponse(datagram []byte) (address net.IP, port uint16) {
-  msg, err := stun.Parse(datagram)
+  msg, err := goturn.ParseStun(datagram)
   if err != nil {
     log.Fatal("Could not parse response as a STUN message:", err)
   }
 
-  if msg.Header.Type != stun.BindingResponse {
+  if msg.Header.Type != goturn.BindingResponse {
     log.Fatal("Response message is not a STUN response.", msg.Header)
   }
 
@@ -45,7 +46,7 @@ func main() {
   defer c.Close()
 
   // construct request message
-  packet,err := stun.NewBindingRequest()
+  packet,err := goturn.NewBindingRequest()
   if err != nil {
     log.Fatal("Failed to generate request packet:", err)
   }

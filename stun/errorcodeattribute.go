@@ -4,6 +4,11 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	"github.com/willscott/goturn/common"
+)
+
+const (
+	ErrorCode stun.AttributeType = 0x9
 )
 
 type ErrorCodeAttribute struct {
@@ -12,13 +17,17 @@ type ErrorCodeAttribute struct {
 	Phrase string
 }
 
-func (h *ErrorCodeAttribute) Type() AttributeType {
+func NewErrorCodeAttribute() stun.Attribute {
+	return stun.Attribute(new(ErrorCodeAttribute))
+}
+
+func (h *ErrorCodeAttribute) Type() stun.AttributeType {
 	return ErrorCode
 }
 
-func (h *ErrorCodeAttribute) Encode(msg *Message) ([]byte, error) {
+func (h *ErrorCodeAttribute) Encode(msg *stun.Message) ([]byte, error) {
 	buf := new(bytes.Buffer)
-	err := binary.Write(buf, binary.BigEndian, attributeHeader(Attribute(h), msg))
+	err := stun.WriteHeader(buf, stun.Attribute(h), msg)
 	err = binary.Write(buf, binary.BigEndian, uint16(0))
 	err = binary.Write(buf, binary.BigEndian, h.Class)
 	err = binary.Write(buf, binary.BigEndian, h.Number)
@@ -30,7 +39,7 @@ func (h *ErrorCodeAttribute) Encode(msg *Message) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func (h *ErrorCodeAttribute) Decode(data []byte, length uint16, _ *Message) error {
+func (h *ErrorCodeAttribute) Decode(data []byte, length uint16, _ *stun.Message) error {
 	if len(data) < 4 || len(data) > 65535 || uint16(len(data)) < length {
 		return errors.New("Truncated Error Code Attribute")
 	}
@@ -49,6 +58,6 @@ func (h *ErrorCodeAttribute) Decode(data []byte, length uint16, _ *Message) erro
 	return nil
 }
 
-func (h *ErrorCodeAttribute) Length(_ *Message) uint16 {
+func (h *ErrorCodeAttribute) Length(_ *stun.Message) uint16 {
 	return uint16(4 + len(h.Phrase))
 }
