@@ -3,7 +3,7 @@ package main
 import (
   "encoding/json"
   "flag"
-  "github.com/willscott/goturn/turn"
+  "github.com/willscott/goturn"
   "io/ioutil"
   "log"
   "net"
@@ -55,7 +55,7 @@ func main() {
   defer c.Close()
 
   // construct request message
-  packet,err := turn.NewAllocateRequest()
+  packet,err := goturn.NewAllocateRequest()
   if err != nil {
     log.Fatal("Failed to generate request packet:", err)
   }
