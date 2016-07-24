@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"github.com/willscott/goturn/common"
 	"hash/crc32"
+	"log"
 )
 
 const (
@@ -66,21 +68,22 @@ func (h *FingerprintAttribute) Decode(data []byte, length uint16, msg *stun.Mess
 	// Calculate partial message
 	var partialMsg stun.Message
 	partialMsg.Header = msg.Header
-	copy(partialMsg.Attributes, msg.Attributes)
+	partialMsg.Attributes = append(partialMsg.Attributes, msg.Attributes...)
 
 	// Add a new attribute w/ same length as fingerprint
 	dummy := stun.UnknownStunAttribute{Fingerprint, make([]byte, 4)}
 	partialMsg.Attributes = append(partialMsg.Attributes, &dummy)
-	// calcualte the byte string
+	// calculate the byte string
 	msgBytes, err := partialMsg.Serialize()
 	if err != nil {
 		return err
 	}
 
 	crc := crc32.ChecksumIEEE(msgBytes[0:len(msgBytes)-8]) ^ crcXOR
+	log.Printf("msg: %x",msgBytes[0:len(msgBytes)-8])
 
 	if crc != h.CRC {
-		return errors.New("Invalid Fingerprint value.")
+		return errors.New(fmt.Sprintf("Invalid Fingerprint value. calculated %x, but was %x", crc, h.CRC))
 	}
 
 	return nil

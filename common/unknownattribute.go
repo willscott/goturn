@@ -2,7 +2,6 @@ package stun
 
 import (
 	"bytes"
-	"encoding/binary"
 	"errors"
 )
 
@@ -22,7 +21,7 @@ func (h *UnknownStunAttribute) Type() AttributeType {
 func (h *UnknownStunAttribute) Encode(msg *Message) ([]byte, error) {
 	buf := new(bytes.Buffer)
 	err := WriteHeader(buf, Attribute(h), msg)
-	err = binary.Write(buf, binary.BigEndian, h.Data)
+	buf.Write(h.Data)
 
 	if err != nil {
 		return nil, err

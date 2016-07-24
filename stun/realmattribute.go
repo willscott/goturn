@@ -2,7 +2,6 @@ package stun
 
 import (
 	"bytes"
-	"encoding/binary"
 	"errors"
 	"github.com/willscott/goturn/common"
 )
@@ -25,7 +24,7 @@ func (h *RealmAttribute) Type() stun.AttributeType {
 func (h *RealmAttribute) Encode(msg *stun.Message) ([]byte, error) {
 	buf := new(bytes.Buffer)
 	err := stun.WriteHeader(buf, stun.Attribute(h), msg)
-	err = binary.Write(buf, binary.BigEndian, msg.Credentials.Realm)
+	buf.WriteString(msg.Credentials.Realm)
 
 	if err != nil {
 		return nil, err

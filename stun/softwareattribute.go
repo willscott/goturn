@@ -2,7 +2,6 @@ package stun
 
 import (
 	"bytes"
-	"encoding/binary"
 	"errors"
 	"github.com/willscott/goturn/common"
 )
@@ -26,7 +25,7 @@ func (h *SoftwareAttribute) Type() stun.AttributeType {
 func (h *SoftwareAttribute) Encode(msg *stun.Message) ([]byte, error) {
 	buf := new(bytes.Buffer)
 	err := stun.WriteHeader(buf, stun.Attribute(h), msg)
-	err = binary.Write(buf, binary.BigEndian, h.Software)
+	buf.WriteString(h.Software)
 
 	if err != nil {
 		return nil, err

@@ -2,7 +2,6 @@ package stun
 
 import (
 	"bytes"
-	"encoding/binary"
 	"errors"
 	"github.com/willscott/goturn/common"
 )
@@ -12,7 +11,7 @@ const (
 )
 
 type NonceAttribute struct {
-	Nonce string
+	Nonce []byte
 }
 
 func NewNonceAttribute() stun.Attribute {
@@ -26,7 +25,7 @@ func (h *NonceAttribute) Type() stun.AttributeType {
 func (h *NonceAttribute) Encode(msg *stun.Message) ([]byte, error) {
 	buf := new(bytes.Buffer)
 	err := stun.WriteHeader(buf, stun.Attribute(h), msg)
-	err = binary.Write(buf, binary.BigEndian, h.Nonce)
+	buf.Write(h.Nonce)
 
 	if err != nil {
 		return nil, err
@@ -41,7 +40,7 @@ func (h *NonceAttribute) Decode(data []byte, length uint16, _ *stun.Message) err
 	if length > 763 {
 		return errors.New("Nonce Length is too long")
 	}
-	h.Nonce = string(data[0:length])
+	h.Nonce = data[0:length]
 	return nil
 }
 

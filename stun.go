@@ -2,7 +2,6 @@ package goturn
 
 import (
 	"crypto/rand"
-	"errors"
 	common "github.com/willscott/goturn/common"
 	"github.com/willscott/goturn/stun"
 )
@@ -21,32 +20,8 @@ const (
 	AlternateServer common.AttributeType = 0x8023
 )
 
-func Parse(data []byte, credentials common.Credentials, attrs common.AttributeSet) (*common.Message, error) {
-	message := new(common.Message)
-	message.Credentials = credentials
-	message.Attributes = []common.Attribute{}
-	if err := message.Header.Decode(data); err != nil {
-		return nil, err
-	}
-	data = data[20:]
-	if len(data) != int(message.Header.Length) {
-		return nil, errors.New("Message has incorrect Length")
-	}
-	for len(data) > 0 {
-		attribute, err := common.DecodeAttribute(data, attrs, message)
-		if err != nil {
-			return nil, err
-		}
-		message.Attributes = append(message.Attributes, *attribute)
-		// 4 byte header and rounded up to next multiple of 4
-		len := 4 * int(((*attribute).Length(message)+7)/4)
-		data = data[len:]
-	}
-	return message, nil
-}
-
 func ParseStun(data []byte) (*common.Message, error) {
-	return Parse(data, common.Credentials{}, stun.StunAttributes)
+	return common.Parse(data, common.Credentials{}, stun.StunAttributes)
 }
 
 //Convienence functions for making commonly used data structures.

@@ -38,7 +38,7 @@ const (
 )
 
 func ParseTurn(data []byte, credentials common.Credentials) (*common.Message, error) {
-	return Parse(data, credentials, turn.AttributeSet())
+	return common.Parse(data, credentials, turn.AttributeSet())
 }
 
 func NewAllocateRequest() (*common.Message, error) {

@@ -31,7 +31,7 @@ func (h *ErrorCodeAttribute) Encode(msg *stun.Message) ([]byte, error) {
 	err = binary.Write(buf, binary.BigEndian, uint16(0))
 	err = binary.Write(buf, binary.BigEndian, h.Class)
 	err = binary.Write(buf, binary.BigEndian, h.Number)
-	err = binary.Write(buf, binary.BigEndian, h.Phrase)
+	buf.WriteString(h.Phrase)
 
 	if err != nil {
 		return nil, err
