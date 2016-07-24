@@ -43,13 +43,13 @@ func (h *UnknownAttributesAttribute) Decode(data []byte, length uint16, _ *stun.
 		return errors.New("Truncated Unknown Attributes Attribute")
 	}
 
-	for i := 0; uint16(i) < length; i +=2  {
-		h.Attributes = append(h.Attributes, uint16(data[i])<<8 + uint16(data[i + 1]))
+	for i := 0; uint16(i) < length; i += 2 {
+		h.Attributes = append(h.Attributes, uint16(data[i])<<8+uint16(data[i+1]))
 	}
 
 	return nil
 }
 
 func (h *UnknownAttributesAttribute) Length(_ *stun.Message) uint16 {
-	return uint16(2*len(h.Attributes))
+	return uint16(2 * len(h.Attributes))
 }

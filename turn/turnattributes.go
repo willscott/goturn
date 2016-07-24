@@ -16,12 +16,12 @@ var (
 // Registry of stun and turn attributes as the default set to work with when
 // decoding messages.
 func AttributeSet() common.AttributeSet {
-  set := make(common.AttributeSet)
-  for key,value := range stun.StunAttributes {
-    set[key] = value
-  }
-  for key,value := range TurnAttributes {
-    set[key] = value
-  }
-  return set
+	set := make(common.AttributeSet)
+	for key, value := range stun.StunAttributes {
+		set[key] = value
+	}
+	for key, value := range TurnAttributes {
+		set[key] = value
+	}
+	return set
 }

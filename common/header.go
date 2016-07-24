@@ -20,7 +20,7 @@ type Header struct {
 }
 
 func (h Header) String() string {
-	return fmt.Sprintf("%T #%x [%db]", h.Type, h.Id, h.Length)
+	return fmt.Sprintf("Header(%#v id=%x len=%d)", h.Type, h.Id, h.Length)
 }
 
 func (h *Header) Encode() ([]byte, error) {

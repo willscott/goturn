@@ -1,17 +1,17 @@
 package main
 
 import (
-  "encoding/json"
-  "flag"
-  common "github.com/willscott/goturn/common"
-  "github.com/willscott/goturn/stun"
-  "github.com/willscott/goturn"
-  "io/ioutil"
-  "log"
-  "net"
-  "net/http"
-  "net/url"
-  "time"
+	"encoding/json"
+	"flag"
+	"github.com/willscott/goturn"
+	common "github.com/willscott/goturn/common"
+	"github.com/willscott/goturn/stun"
+	"io/ioutil"
+	"log"
+	"net"
+	"net/http"
+	"net/url"
+	"time"
 )
 
 var credentialURL = flag.String("credentials", "https://computeengineondemand.appspot.com/turn?username=prober&key=4080218913", "credential URL")
@@ -100,38 +100,38 @@ func main() {
 	packet.Credentials.Username = creds.Username
 	packet.Credentials.Realm = response.Credentials.Realm
 	packet.Credentials.Password = creds.Password
-	packet.Attributes = append(packet.Attributes,
-		[]common.Attribute{*response.GetAttribute(stun.Nonce),
-			&stun.UsernameAttribute{},
-			&stun.MessageIntegrityAttribute{},
-			&stun.FingerprintAttribute{}}...)
+	packet.Attributes = []common.Attribute{*response.GetAttribute(stun.Nonce),
+		&stun.UsernameAttribute{},
+		&stun.RealmAttribute{},
+		&stun.MessageIntegrityAttribute{},
+		&stun.FingerprintAttribute{}}
 
 	message, err = packet.Serialize()
 	if err != nil {
 		log.Fatal("Failed to serialize packet: ", err)
 	}
 
-  // send message
-  _, err = c.Write(message)
-  if err != nil {
-    log.Fatal("Failed to send message: ", err)
-  }
-
-  // listen for response
-  c.SetReadDeadline(time.Now().Add(1000 * time.Millisecond))
-  n, err = c.Read(b)
-  if err != nil || n == 0 || n > 2048 {
-    log.Fatal("Failed to read response: ", err)
-  }
-
-  response, err = goturn.ParseTurn(b[0:n], packet.Credentials)
+	// send message
+	_, err = c.Write(message)
 	if err != nil {
-		log.Fatal("Could not parse authorized AllocateResponse:", err)
+		log.Fatal("Failed to send message: ", err)
 	}
 
-  if response.Header.Type != goturn.AllocateResponse {
-		log.Fatal("Response message was not responding to allocation", response.Header)
+	// listen for response
+	c.SetReadDeadline(time.Now().Add(1000 * time.Millisecond))
+	n, err = c.Read(b)
+	if err != nil || n == 0 || n > 2048 {
+		log.Fatal("Failed to read response: ", err)
 	}
-  //address, port := parseResponse(b[:n])
+
+	response, err = goturn.ParseTurn(b[0:n], packet.Credentials)
+	if err != nil {
+		log.Fatal("Could not parse authorized AllocateResponse: ", err)
+	}
+
+	if response.Header.Type != goturn.AllocateResponse {
+		log.Fatal("Response message was not responding to allocation: ", response.Header)
+	}
+	//address, port := parseResponse(b[:n])
 	//log.Printf("%s:%d", address, port)
 }

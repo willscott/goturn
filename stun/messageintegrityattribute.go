@@ -8,6 +8,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"github.com/willscott/goturn/common"
+	"log"
 )
 
 const (
@@ -52,6 +53,7 @@ func (h *MessageIntegrityAttribute) Encode(msg *stun.Message) ([]byte, error) {
 	// Calculate partial message
 	var partialMsg stun.Message
 	partialMsg.Header = msg.Header
+	partialMsg.Credentials = msg.Credentials
 
 	partialMsg.Attributes = make([]stun.Attribute, len(msg.Attributes))
 	copy(partialMsg.Attributes, msg.Attributes)
@@ -89,6 +91,9 @@ func (h *MessageIntegrityAttribute) Decode(data []byte, length uint16, p *stun.P
 	}
 
 	key := makeKey(&p.Credentials)
+	if key == nil {
+		return errors.New("No credentials to decrypt MessageIntegrity Attribute")
+	}
 
 	msgBytes := p.Data[0:p.Offset]
 	// Twiddle length to where it would be at the point of this attribute
@@ -106,7 +111,7 @@ func (h *MessageIntegrityAttribute) Decode(data []byte, length uint16, p *stun.P
 
 	//hmac all but the dummy attribute
 	mac := hmac.New(sha1.New, key)
-	mac.Write(msgBytes[0 : len(msgBytes)-24])
+	mac.Write(msgBytes[0 : len(msgBytes)])
 	hash := mac.Sum(nil)
 
 	header.Length = oldLength
@@ -114,7 +119,7 @@ func (h *MessageIntegrityAttribute) Decode(data []byte, length uint16, p *stun.P
 	copy(msgBytes[0:20], newhead[0:20])
 
 	if !bytes.Equal(hash, data[0:20]) {
-		return errors.New("Invalid Message Integrity value..")
+		return errors.New("Invalid Message Integrity value.")
 	}
 
 	return nil

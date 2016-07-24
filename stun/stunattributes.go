@@ -13,7 +13,7 @@ var (
 		Nonce:             NewNonceAttribute,
 		Realm:             NewRealmAttribute,
 		Software:          NewSoftwareAttribute,
-    UnknownAttributes: NewUnknownAttributesAttribute,
+		UnknownAttributes: NewUnknownAttributesAttribute,
 		Username:          NewUsernameAttribute,
 		XorMappedAddress:  NewXorMappedAddressAttribute,
 	}
