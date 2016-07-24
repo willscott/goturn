@@ -6,6 +6,8 @@ import (
 	common "github.com/willscott/goturn/common"
 	"github.com/willscott/goturn/stun"
 	"github.com/willscott/goturn/turn"
+
+	"net"
 )
 
 const (
@@ -27,13 +29,8 @@ const (
 
 //Deprecated. Should live in individual turn attribute implementations.
 const (
-	ChannelNumber      common.AttributeType = 0xC
-	Lifetime                                = 0xD
-	XorPeerAddress                          = 0x12
-	Data                                    = 0x13
-	XorRelayedAddress                       = 0x16
+	Data               common.AttributeType = 0x13
 	EvenPort                                = 0x18
-	RequestedTransport                      = 0x19
 	DontFragment                            = 0x1A
 	ReservationToken                        = 0x22
 )
@@ -56,12 +53,35 @@ func NewAllocateRequest(inResponseTo *common.Message) (*common.Message, error) {
 	} else {
 		message.Credentials = inResponseTo.Credentials
 		message.Attributes = []common.Attribute{&turn.RequestedTransportAttribute{17},
-			*inResponseTo.GetAttribute(stun.Nonce),
+			&stun.NonceAttribute{},
 			&stun.UsernameAttribute{},
 			&stun.RealmAttribute{},
 			&stun.MessageIntegrityAttribute{},
 			&stun.FingerprintAttribute{}}
 	}
+
+	return &message, err
+}
+
+func NewPermissionRequest(credentials common.Credentials, to net.IP) (*common.Message, error) {
+	message := common.Message{
+		Header: common.Header{
+			Type: CreatePermissionRequest,
+		},
+	}
+	_, err := rand.Read(message.Header.Id[:])
+
+	message.Credentials = credentials
+	family := uint16(1)
+	if to.To4() == nil {
+		family = 2
+	}
+	message.Attributes = []common.Attribute{&stun.NonceAttribute{},
+		&turn.XorPeerAddressAttribute{family, 0, to},
+		&stun.UsernameAttribute{},
+		&stun.RealmAttribute{},
+		&stun.MessageIntegrityAttribute{},
+		&stun.FingerprintAttribute{}}
 
 	return &message, err
 }

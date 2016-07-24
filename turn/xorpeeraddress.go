@@ -8,25 +8,25 @@ import (
 )
 
 const (
-	XorRelayedAddress common.AttributeType = 0x16
+	XorPeerAddress common.AttributeType = 0x12
 )
 
-type XorRelayedAddressAttribute struct {
+type XorPeerAddressAttribute struct {
 	Family  uint16
 	Port    uint16
 	Address net.IP
 }
 
-func NewXorRelayedAddressAttribute() common.Attribute {
-	return common.Attribute(new(XorRelayedAddressAttribute))
+func NewXorPeerAddressAttribute() common.Attribute {
+	return common.Attribute(new(XorPeerAddressAttribute))
 }
 
-func (h *XorRelayedAddressAttribute) Type() common.AttributeType {
-	return XorRelayedAddress
+func (h *XorPeerAddressAttribute) Type() common.AttributeType {
+	return XorPeerAddress
 }
 
-func (h *XorRelayedAddressAttribute) Encode(msg *common.Message) ([]byte, error) {
-  buf := new(bytes.Buffer)
+func (h *XorPeerAddressAttribute) Encode(msg *common.Message) ([]byte, error) {
+	buf := new(bytes.Buffer)
 	if err := common.WriteHeader(buf, common.Attribute(h), msg); err != nil {
 		return nil, err
 	}
@@ -39,7 +39,7 @@ func (h *XorRelayedAddressAttribute) Encode(msg *common.Message) ([]byte, error)
   return buf.Bytes(), nil
 }
 
-func (h *XorRelayedAddressAttribute) Decode(data []byte, length uint16, p *common.Parser) error {
+func (h *XorPeerAddressAttribute) Decode(data []byte, length uint16, p *common.Parser) error {
   mapped := stun.XorMappedAddressAttribute(*h)
   if err := mapped.Decode(data, length, p); err != nil {
     return err
@@ -50,7 +50,7 @@ func (h *XorRelayedAddressAttribute) Decode(data []byte, length uint16, p *commo
   return nil
 }
 
-func (h *XorRelayedAddressAttribute) Length(_ *common.Message) uint16 {
+func (h *XorPeerAddressAttribute) Length(_ *common.Message) uint16 {
 	if h.Family == 1 {
 		return 8
 	} else {

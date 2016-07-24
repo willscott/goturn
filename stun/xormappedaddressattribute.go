@@ -26,10 +26,9 @@ func (h *XorMappedAddressAttribute) Type() stun.AttributeType {
 	return XorMappedAddress
 }
 
-func (h *XorMappedAddressAttribute) Encode(msg *stun.Message) ([]byte, error) {
+func XorAddressData(h *XorMappedAddressAttribute, msg *stun.Message) ([]byte, error) {
 	buf := new(bytes.Buffer)
-	err := stun.WriteHeader(buf, stun.Attribute(h), msg)
-	err = binary.Write(buf, binary.BigEndian, h.Family)
+	err := binary.Write(buf, binary.BigEndian, h.Family)
 	xport := h.Port ^ uint16(stun.MagicCookie>>16)
 	err = binary.Write(buf, binary.BigEndian, xport)
 
@@ -50,6 +49,19 @@ func (h *XorMappedAddressAttribute) Encode(msg *stun.Message) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	return buf.Bytes(), nil
+}
+
+func (h *XorMappedAddressAttribute) Encode(msg *stun.Message) ([]byte, error) {
+	buf := new(bytes.Buffer)
+	if err := stun.WriteHeader(buf, stun.Attribute(h), msg); err != nil {
+		return nil, err
+	}
+  bytes, err := XorAddressData(h, msg)
+	if err != nil {
+		return nil, err
+	}
+	buf.Write(bytes)
 	return buf.Bytes(), nil
 }
 

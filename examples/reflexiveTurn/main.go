@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"flag"
 	"github.com/willscott/goturn"
+  "github.com/willscott/goturn/stun"
 	common "github.com/willscott/goturn/common"
 	"io/ioutil"
 	"log"
@@ -117,14 +118,51 @@ func main() {
 		log.Fatal("Failed to read response: ", err)
 	}
 
-	response, err = goturn.ParseTurn(b[0:n], packet.Credentials)
+	authResponse, err := goturn.ParseTurn(b[0:n], packet.Credentials)
 	if err != nil {
 		log.Fatal("Could not parse authorized AllocateResponse: ", err)
 	}
 
-	if response.Header.Type != goturn.AllocateResponse {
+	if authResponse.Header.Type != goturn.AllocateResponse {
 		log.Fatal("Response message was not responding to allocation: ", response.Header)
 	}
+  log.Printf("Authenticated and granted Port allocation.")
+
+  // Request to send back to ourselves.
+  mappedAddr := authResponse.GetAttribute(stun.XorMappedAddress)
+  myReflexiveAddress := (*mappedAddr).(*stun.XorMappedAddressAttribute)
+
+  // use initial response with nonce set when requesting permissions.
+  packet, err = goturn.NewPermissionRequest(authResponse.Credentials, myReflexiveAddress.Address)
+
+  message, err = packet.Serialize()
+	if err != nil {
+		log.Fatal("Failed to serialize packet: ", err)
+	}
+
+  // send message
+	_, err = c.Write(message)
+	if err != nil {
+		log.Fatal("Failed to send message: ", err)
+	}
+
+	// listen for response
+	c.SetReadDeadline(time.Now().Add(1000 * time.Millisecond))
+	n, err = c.Read(b)
+	if err != nil || n == 0 || n > 2048 {
+		log.Fatal("Failed to read response: ", err)
+	}
+
+	permissionResponse, err := goturn.ParseTurn(b[0:n], packet.Credentials)
+	if err != nil {
+		log.Fatal("Could not parse PermissionResponse: ", err)
+	}
+
+  if permissionResponse.Header.Type != goturn.CreatePermissionResponse {
+		log.Fatal("Response message was not okay with permission request: ", response.Header)
+	}
+  log.Printf("Granted Permission to send to %s.", myReflexiveAddress.Address)
+
 	//address, port := parseResponse(b[:n])
 	//log.Printf("%s:%d", address, port)
 }

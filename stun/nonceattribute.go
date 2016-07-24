@@ -11,7 +11,6 @@ const (
 )
 
 type NonceAttribute struct {
-	Nonce []byte
 }
 
 func NewNonceAttribute() stun.Attribute {
@@ -25,7 +24,7 @@ func (h *NonceAttribute) Type() stun.AttributeType {
 func (h *NonceAttribute) Encode(msg *stun.Message) ([]byte, error) {
 	buf := new(bytes.Buffer)
 	err := stun.WriteHeader(buf, stun.Attribute(h), msg)
-	buf.Write(h.Nonce)
+	buf.Write(msg.Credentials.Nonce)
 
 	if err != nil {
 		return nil, err
@@ -33,17 +32,18 @@ func (h *NonceAttribute) Encode(msg *stun.Message) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func (h *NonceAttribute) Decode(data []byte, length uint16, _ *stun.Parser) error {
+func (h *NonceAttribute) Decode(data []byte, length uint16, p *stun.Parser) error {
 	if uint16(len(data)) < length {
 		return errors.New("Truncated Nonce Attribute")
 	}
 	if length > 763 {
 		return errors.New("Nonce Length is too long")
 	}
-	h.Nonce = data[0:length]
+	p.Message.Credentials.Nonce = make([]byte, length)
+	copy(p.Message.Credentials.Nonce, data[0:length])
 	return nil
 }
 
-func (h *NonceAttribute) Length(_ *stun.Message) uint16 {
-	return uint16(len(h.Nonce))
+func (h *NonceAttribute) Length(msg *stun.Message) uint16 {
+	return uint16(len(msg.Credentials.Nonce))
 }
