@@ -12,7 +12,7 @@ type AttributeType uint16
 type Attribute interface {
 	Type() AttributeType
 	Encode(*Message) ([]byte, error)
-	Decode([]byte, uint16, *Message) error
+	Decode([]byte, uint16, *Parser) error
 	Length(*Message) uint16
 }
 
@@ -24,7 +24,7 @@ func WriteHeader(buf *bytes.Buffer, a Attribute, msg *Message) error {
 	return binary.Write(buf, binary.BigEndian, header)
 }
 
-func DecodeAttribute(data []byte, attrs AttributeSet, msg *Message) (*Attribute, error) {
+func DecodeAttribute(data []byte, attrs AttributeSet, parser *Parser) (*Attribute, error) {
 	attributeType := binary.BigEndian.Uint16(data)
 	length := binary.BigEndian.Uint16(data[2:])
 	attrMaker, ok := attrs[AttributeType(attributeType)]
@@ -33,10 +33,10 @@ func DecodeAttribute(data []byte, attrs AttributeSet, msg *Message) (*Attribute,
 	}
 	result := attrMaker()
 
-	err := result.Decode(data[4:], length, msg)
+	err := result.Decode(data[4:], length, parser)
 	if err != nil {
 		return nil, err
-	} else if result.Length(msg) != length {
+	} else if result.Length(parser.Message) != length {
 		return nil, errors.New(fmt.Sprintf("Incorrect Length Specified for %T", result))
 	}
 	return &result, nil

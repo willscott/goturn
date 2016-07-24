@@ -32,14 +32,14 @@ func (h *RealmAttribute) Encode(msg *stun.Message) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func (h *RealmAttribute) Decode(data []byte, length uint16, msg *stun.Message) error {
+func (h *RealmAttribute) Decode(data []byte, length uint16, p *stun.Parser) error {
 	if uint16(len(data)) < length {
 		return errors.New("Truncated Realm Attribute")
 	}
 	if length > 763 {
 		return errors.New("Realm Length is too long")
 	}
-	msg.Credentials.Realm = string(data[0:length])
+	p.Message.Credentials.Realm = string(data[0:length])
 	return nil
 }
 

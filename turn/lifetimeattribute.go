@@ -34,7 +34,7 @@ func (h *LifetimeAttribute) Encode(msg *stun.Message) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func (h *LifetimeAttribute) Decode(data []byte, length uint16, _ *stun.Message) error {
+func (h *LifetimeAttribute) Decode(data []byte, length uint16, _ *stun.Parser) error {
 	if uint16(len(data)) < length {
 		return errors.New("Truncated Username Attribute")
 	}

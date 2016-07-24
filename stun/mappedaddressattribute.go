@@ -39,7 +39,7 @@ func (h *MappedAddressAttribute) Encode(msg *stun.Message) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func (h *MappedAddressAttribute) Decode(data []byte, _ uint16, _ *stun.Message) error {
+func (h *MappedAddressAttribute) Decode(data []byte, _ uint16, _ *stun.Parser) error {
 	if data[0] != 0 && data[1] != 1 && data[0] != 2 {
 		return errors.New("Incorrect Mapped Address Family.")
 	}

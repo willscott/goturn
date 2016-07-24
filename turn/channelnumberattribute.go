@@ -35,7 +35,7 @@ func (h *ChannelNumberAttribute) Encode(msg *stun.Message) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func (h *ChannelNumberAttribute) Decode(data []byte, length uint16, _ *stun.Message) error {
+func (h *ChannelNumberAttribute) Decode(data []byte, length uint16, _ *stun.Parser) error {
 	if length != 4 || uint16(len(data)) < length {
 		return errors.New("Truncated ChannelNumber Attribute")
 	}

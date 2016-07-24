@@ -32,11 +32,11 @@ func (h *UsernameAttribute) Encode(msg *stun.Message) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func (h *UsernameAttribute) Decode(data []byte, length uint16, msg *stun.Message) error {
+func (h *UsernameAttribute) Decode(data []byte, length uint16, p *stun.Parser) error {
 	if uint16(len(data)) < length {
 		return errors.New("Truncated Username Attribute")
 	}
-	msg.Credentials.Username = string(data[0:length])
+	p.Message.Credentials.Username = string(data[0:length])
 	return nil
 }
 

@@ -38,7 +38,7 @@ func (h *UnknownAttributesAttribute) Encode(msg *stun.Message) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func (h *UnknownAttributesAttribute) Decode(data []byte, length uint16, _ *stun.Message) error {
+func (h *UnknownAttributesAttribute) Decode(data []byte, length uint16, _ *stun.Parser) error {
 	if uint16(len(data)) < length {
 		return errors.New("Truncated Unknown Attributes Attribute")
 	}

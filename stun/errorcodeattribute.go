@@ -39,7 +39,7 @@ func (h *ErrorCodeAttribute) Encode(msg *stun.Message) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func (h *ErrorCodeAttribute) Decode(data []byte, length uint16, _ *stun.Message) error {
+func (h *ErrorCodeAttribute) Decode(data []byte, length uint16, _ *stun.Parser) error {
 	if len(data) < 4 || len(data) > 65535 || uint16(len(data)) < length {
 		return errors.New("Truncated Error Code Attribute")
 	}

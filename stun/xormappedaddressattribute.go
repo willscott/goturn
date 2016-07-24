@@ -53,7 +53,7 @@ func (h *XorMappedAddressAttribute) Encode(msg *stun.Message) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func (h *XorMappedAddressAttribute) Decode(data []byte, _ uint16, msg *stun.Message) error {
+func (h *XorMappedAddressAttribute) Decode(data []byte, _ uint16, p *stun.Parser) error {
 	if data[0] != 0 && data[1] != 1 && data[0] != 2 {
 		return errors.New("Incorrect Mapped Address Family.")
 	}
@@ -73,7 +73,7 @@ func (h *XorMappedAddressAttribute) Decode(data []byte, _ uint16, msg *stun.Mess
 	} else {
 		xoraddress = make([]byte, 16)
 		binary.BigEndian.PutUint32(xoraddress, stun.MagicCookie)
-		copy(xoraddress[4:16], msg.Header.Id[:])
+		copy(xoraddress[4:16], p.Message.Header.Id[:])
 		h.Address = data[4:20]
 	}
 	for i, _ := range xoraddress {

@@ -49,26 +49,44 @@ func (m *Message) GetAttribute(typ AttributeType) *Attribute {
   return nil
 }
 
+type Parser struct {
+  *Message
+  Credentials
+  AttributeSet
+  Data []byte
+  Offset uint16
+}
+
 func Parse(data []byte, credentials Credentials, attrs AttributeSet) (*Message, error) {
-	message := new(Message)
-	message.Credentials = credentials
-	message.Attributes = []Attribute{}
-	if err := message.Header.Decode(data); err != nil {
-		return nil, err
+  parser := Parser{new(Message), credentials, attrs, data, 0}
+  err := parser.Parse()
+  if err != nil {
+    return nil, err
+  }
+  return parser.Message, nil
+}
+
+func (p *Parser) Parse() error {
+	p.Message.Credentials = p.Credentials
+	p.Message.Attributes = []Attribute{}
+	if err := p.Message.Header.Decode(p.Data); err != nil {
+		return err
 	}
-	data = data[20:]
-	if len(data) != int(message.Header.Length) {
-		return nil, errors.New("Message has incorrect Length")
+  data := p.Data[20:]
+  p.Offset = 20
+	if len(data) != int(p.Message.Header.Length) {
+		return errors.New("Message has incorrect Length")
 	}
 	for len(data) > 0 {
-		attribute, err := DecodeAttribute(data, attrs, message)
+		attribute, err := DecodeAttribute(data, p.AttributeSet, p)
 		if err != nil {
-			return nil, err
+			return err
 		}
-		message.Attributes = append(message.Attributes, *attribute)
+		p.Message.Attributes = append(p.Message.Attributes, *attribute)
 		// 4 byte header and rounded up to next multiple of 4
-		len := 4 * int(((*attribute).Length(message)+7)/4)
+		len := 4 * int(((*attribute).Length(p.Message)+7)/4)
+    p.Offset += uint16(len)
 		data = data[len:]
 	}
-	return message, nil
+	return nil
 }
