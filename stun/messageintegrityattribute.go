@@ -26,8 +26,8 @@ func (h *MessageIntegrityAttribute) Type() stun.AttributeType {
 }
 
 func makeKey(cred *stun.Credentials) []byte {
-	var key []byte
 	if len(cred.Username) > 0 {
+		key := make([]byte, 16)
 		sum := md5.Sum([]byte(cred.Username + ":" + cred.Realm + ":" + cred.Password))
 		copy(key[:], sum[0:16])
 		return key
@@ -52,6 +52,8 @@ func (h *MessageIntegrityAttribute) Encode(msg *stun.Message) ([]byte, error) {
 	// Calculate partial message
 	var partialMsg stun.Message
 	partialMsg.Header = msg.Header
+
+	partialMsg.Attributes = make([]stun.Attribute, len(msg.Attributes))
 	copy(partialMsg.Attributes, msg.Attributes)
 
 	// Remove either 1 (msg integrity) or 2 (fingerprint and msg integrity) attributes

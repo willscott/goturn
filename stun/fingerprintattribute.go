@@ -35,6 +35,8 @@ func (h *FingerprintAttribute) Encode(msg *stun.Message) ([]byte, error) {
 	// Calculate partial message
 	var partialMsg stun.Message
 	partialMsg.Header = msg.Header
+	partialMsg.Credentials = msg.Credentials
+	partialMsg.Attributes = make([]stun.Attribute, len(msg.Attributes))
 	copy(partialMsg.Attributes, msg.Attributes)
 
 	// Fingerprint must be last attribute.

@@ -111,6 +111,27 @@ func main() {
 		log.Fatal("Failed to serialize packet: ", err)
 	}
 
-	//address, port := parseResponse(b[:n])
+  // send message
+  _, err = c.Write(message)
+  if err != nil {
+    log.Fatal("Failed to send message: ", err)
+  }
+
+  // listen for response
+  c.SetReadDeadline(time.Now().Add(1000 * time.Millisecond))
+  n, err = c.Read(b)
+  if err != nil || n == 0 || n > 2048 {
+    log.Fatal("Failed to read response: ", err)
+  }
+
+  response, err = goturn.ParseTurn(b[0:n], packet.Credentials)
+	if err != nil {
+		log.Fatal("Could not parse authorized AllocateResponse:", err)
+	}
+
+  if response.Header.Type != goturn.AllocateResponse {
+		log.Fatal("Response message was not responding to allocation", response.Header)
+	}
+  //address, port := parseResponse(b[:n])
 	//log.Printf("%s:%d", address, port)
 }
