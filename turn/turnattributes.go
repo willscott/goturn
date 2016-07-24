@@ -8,6 +8,7 @@ import (
 var (
 	TurnAttributes = common.AttributeSet{
 		ChannelNumber:      NewChannelNumberAttribute,
+		Data:               NewDataAttribute,
 		Lifetime:           NewLifetimeAttribute,
 		RequestedTransport: NewRequestedTransportAttribute,
 		XorRelayedAddress:  NewXorRelayedAddressAttribute,

@@ -2,6 +2,7 @@ package turn
 
 import (
   "bytes"
+  "fmt"
 	common "github.com/willscott/goturn/common"
   "github.com/willscott/goturn/stun"
 	"net"
@@ -15,6 +16,10 @@ type XorRelayedAddressAttribute struct {
 	Family  uint16
 	Port    uint16
 	Address net.IP
+}
+
+func (x *XorRelayedAddressAttribute) String() string {
+	return fmt.Sprintf("%s:%d", x.Address, x.Port)
 }
 
 func NewXorRelayedAddressAttribute() common.Attribute {

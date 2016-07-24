@@ -29,8 +29,7 @@ const (
 
 //Deprecated. Should live in individual turn attribute implementations.
 const (
-	Data               common.AttributeType = 0x13
-	EvenPort                                = 0x18
+	EvenPort           common.AttributeType = 0x18
 	DontFragment                            = 0x1A
 	ReservationToken                        = 0x22
 )
@@ -82,6 +81,23 @@ func NewPermissionRequest(credentials common.Credentials, to net.IP) (*common.Me
 		&stun.RealmAttribute{},
 		&stun.MessageIntegrityAttribute{},
 		&stun.FingerprintAttribute{}}
+
+	return &message, err
+}
+
+func NewSendIndication(host net.IP, port uint16, data []byte) (*common.Message, error) {
+	message := common.Message{
+		Header: common.Header{
+			Type: SendIndication,
+		},
+	}
+	_, err := rand.Read(message.Header.Id[:])
+	family := uint16(1)
+	if host.To4() == nil {
+		family = 2
+	}
+	message.Attributes = []common.Attribute{&turn.XorPeerAddressAttribute{family, port, host},
+		&turn.DataAttribute{data}}
 
 	return &message, err
 }
