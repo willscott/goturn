@@ -69,12 +69,14 @@ func (h *XorMappedAddressAttribute) Decode(data []byte, _ uint16, p *stun.Parser
 	if h.Family == 1 {
 		xoraddress = make([]byte, 4)
 		binary.BigEndian.PutUint32(xoraddress, stun.MagicCookie)
-		h.Address = data[4:8]
+		h.Address = make([]byte, 4)
+		copy(h.Address, data[4:8])
 	} else {
 		xoraddress = make([]byte, 16)
 		binary.BigEndian.PutUint32(xoraddress, stun.MagicCookie)
 		copy(xoraddress[4:16], p.Message.Header.Id[:])
-		h.Address = data[4:20]
+		h.Address = make([]byte, 16)
+		copy(h.Address, data[4:20])
 	}
 	for i, _ := range xoraddress {
 		h.Address[i] ^= xoraddress[i]

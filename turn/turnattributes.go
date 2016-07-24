@@ -10,6 +10,7 @@ var (
 		ChannelNumber:      NewChannelNumberAttribute,
 		Lifetime:           NewLifetimeAttribute,
 		RequestedTransport: NewRequestedTransportAttribute,
+		XorRelayedAddress:  NewXorRelayedAddressAttribute,
 	}
 )
 

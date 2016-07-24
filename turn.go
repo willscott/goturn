@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 
 	common "github.com/willscott/goturn/common"
+	"github.com/willscott/goturn/stun"
 	"github.com/willscott/goturn/turn"
 )
 
@@ -41,7 +42,7 @@ func ParseTurn(data []byte, credentials common.Credentials) (*common.Message, er
 	return common.Parse(data, credentials, turn.AttributeSet())
 }
 
-func NewAllocateRequest() (*common.Message, error) {
+func NewAllocateRequest(inResponseTo *common.Message) (*common.Message, error) {
 	message := common.Message{
 		Header: common.Header{
 			Type: AllocateRequest,
@@ -50,7 +51,17 @@ func NewAllocateRequest() (*common.Message, error) {
 	_, err := rand.Read(message.Header.Id[:])
 
 	//Include a RequestedTransportAttribute = UDP
-	message.Attributes = []common.Attribute{&turn.RequestedTransportAttribute{17}}
+	if inResponseTo == nil {
+		message.Attributes = []common.Attribute{&turn.RequestedTransportAttribute{17}}
+	} else {
+		message.Credentials = inResponseTo.Credentials
+		message.Attributes = []common.Attribute{&turn.RequestedTransportAttribute{17},
+			*inResponseTo.GetAttribute(stun.Nonce),
+			&stun.UsernameAttribute{},
+			&stun.RealmAttribute{},
+			&stun.MessageIntegrityAttribute{},
+			&stun.FingerprintAttribute{}}
+	}
 
 	return &message, err
 }

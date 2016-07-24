@@ -5,7 +5,6 @@ import (
 	"flag"
 	"github.com/willscott/goturn"
 	common "github.com/willscott/goturn/common"
-	"github.com/willscott/goturn/stun"
 	"io/ioutil"
 	"log"
 	"net"
@@ -57,7 +56,7 @@ func main() {
 	defer c.Close()
 
 	// construct allocate message
-	packet, err := goturn.NewAllocateRequest()
+	packet, err := goturn.NewAllocateRequest(nil)
 	if err != nil {
 		log.Fatal("Failed to generate request packet:", err)
 	}
@@ -93,18 +92,12 @@ func main() {
 	}
 
 	// Allocate with credentials
-	packet, err = goturn.NewAllocateRequest()
+	packet, err = goturn.NewAllocateRequest(response)
 	if err != nil {
 		log.Fatal("Failed to generate request packet:", err)
 	}
 	packet.Credentials.Username = creds.Username
-	packet.Credentials.Realm = response.Credentials.Realm
 	packet.Credentials.Password = creds.Password
-	packet.Attributes = []common.Attribute{*response.GetAttribute(stun.Nonce),
-		&stun.UsernameAttribute{},
-		&stun.RealmAttribute{},
-		&stun.MessageIntegrityAttribute{},
-		&stun.FingerprintAttribute{}}
 
 	message, err = packet.Serialize()
 	if err != nil {

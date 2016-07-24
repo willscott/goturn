@@ -7,8 +7,8 @@ import (
 	"crypto/sha1"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"github.com/willscott/goturn/common"
-	"log"
 )
 
 const (
@@ -109,17 +109,17 @@ func (h *MessageIntegrityAttribute) Decode(data []byte, length uint16, p *stun.P
 	}
 	copy(msgBytes[0:20], newhead[0:20])
 
-	//hmac all but the dummy attribute
 	mac := hmac.New(sha1.New, key)
-	mac.Write(msgBytes[0 : len(msgBytes)])
+	mac.Write(msgBytes[0:len(msgBytes)])
 	hash := mac.Sum(nil)
 
+	//unfiddle w/ header length
 	header.Length = oldLength
 	newhead, _ = header.Encode()
 	copy(msgBytes[0:20], newhead[0:20])
 
 	if !bytes.Equal(hash, data[0:20]) {
-		return errors.New("Invalid Message Integrity value.")
+		return errors.New(fmt.Sprintf("Invalid Message Integrity value. Calculated %x, but was %x", hash, data[0:20]))
 	}
 
 	return nil
