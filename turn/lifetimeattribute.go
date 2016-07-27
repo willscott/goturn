@@ -36,7 +36,7 @@ func (h *LifetimeAttribute) Encode(msg *stun.Message) ([]byte, error) {
 
 func (h *LifetimeAttribute) Decode(data []byte, length uint16, _ *stun.Parser) error {
 	if uint16(len(data)) < length {
-		return errors.New("Truncated Username Attribute")
+		return errors.New("Truncated Lifetime Attribute")
 	}
 	h.Lifetime = binary.BigEndian.Uint32(data[0:4])
 	return nil

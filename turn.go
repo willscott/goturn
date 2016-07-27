@@ -15,16 +15,23 @@ const (
 	RefreshRequest                             = 0x0004
 	CreatePermissionRequest                    = 0x0008
 	ChannelBindRequest                         = 0x0009
+	ConnectRequest                             = 0x000a
+	ConnectionBindRequest                      = 0x000b
 	SendIndication                             = 0x0016
 	DataIndication                             = 0x0017
+	ConnectionAttemptIndication                = 0x001c
 	AllocateResponse                           = 0x0103
 	RefreshResponse                            = 0x0104
 	CreatePermissionResponse                   = 0x0108
 	ChannelBindResponse                        = 0x0109
+	ConnectResponse                            = 0x010a
+	ConnectionBindResponse                     = 0x010b
 	AllocateError                              = 0x0113
 	RefreshError                               = 0x0114
 	CreatePermissionError                      = 0x0118
 	ChannelBindError                           = 0x0119
+	ConnectError                               = 0x011a
+	ConnectionBindError                        = 0x011b
 )
 
 //Deprecated. Should live in individual turn attribute implementations.
