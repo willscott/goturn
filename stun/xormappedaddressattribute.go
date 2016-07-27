@@ -57,7 +57,7 @@ func (h *XorMappedAddressAttribute) Encode(msg *stun.Message) ([]byte, error) {
 	if err := stun.WriteHeader(buf, stun.Attribute(h), msg); err != nil {
 		return nil, err
 	}
-  bytes, err := XorAddressData(h, msg)
+	bytes, err := XorAddressData(h, msg)
 	if err != nil {
 		return nil, err
 	}

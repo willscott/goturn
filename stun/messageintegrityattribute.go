@@ -60,7 +60,8 @@ func (h *MessageIntegrityAttribute) Encode(msg *stun.Message) ([]byte, error) {
 
 	// Remove either 1 (msg integrity) or 2 (fingerprint and msg integrity) attributes
 	partialMsg.Attributes = partialMsg.Attributes[0 : len(partialMsg.Attributes)-1]
-	if partialMsg.Attributes[len(partialMsg.Attributes)-1].Type() == MessageIntegrity {
+	if len(partialMsg.Attributes) > 0 &&
+		partialMsg.Attributes[len(partialMsg.Attributes)-1].Type() == MessageIntegrity {
 		partialMsg.Attributes = partialMsg.Attributes[0 : len(partialMsg.Attributes)-1]
 	}
 	// Add a new attribute w/ same length as msg integrity
