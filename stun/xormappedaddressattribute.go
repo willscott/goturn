@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"github.com/willscott/goturn/common"
 	"net"
 )
@@ -20,6 +21,10 @@ type XorMappedAddressAttribute struct {
 
 func NewXorMappedAddressAttribute() stun.Attribute {
 	return stun.Attribute(new(XorMappedAddressAttribute))
+}
+
+func (h XorMappedAddressAttribute) String() string {
+	return net.JoinHostPort(h.Address.String(), fmt.Sprintf("%d", h.Port))
 }
 
 func (h *XorMappedAddressAttribute) Type() stun.AttributeType {

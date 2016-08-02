@@ -17,12 +17,29 @@ type ErrorCodeAttribute struct {
 	Phrase string
 }
 
+func (h ErrorCodeAttribute) String() string {
+	return string(h.Class * 100 + h.Number) + ": " + h.Phrase
+}
+
 func NewErrorCodeAttribute() stun.Attribute {
 	return stun.Attribute(new(ErrorCodeAttribute))
 }
 
 func (h *ErrorCodeAttribute) Type() stun.AttributeType {
 	return ErrorCode
+}
+
+func (h *ErrorCodeAttribute) Error() int {
+	return int(h.Class * 100 + h.Number)
+}
+
+func GetError(msg *stun.Message) *ErrorCodeAttribute {
+  attr := msg.GetAttribute(ErrorCode)
+	if attr != nil {
+  	return (*attr).(*ErrorCodeAttribute)
+	} else {
+		return &ErrorCodeAttribute{}
+	}
 }
 
 func (h *ErrorCodeAttribute) Encode(msg *stun.Message) ([]byte, error) {

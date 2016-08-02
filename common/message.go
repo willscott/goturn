@@ -51,13 +51,13 @@ func (m *Message) GetAttribute(typ AttributeType) *Attribute {
 
 type Parser struct {
   *Message
-  Credentials
+  *Credentials
   AttributeSet
   Data []byte
   Offset uint16
 }
 
-func Parse(data []byte, credentials Credentials, attrs AttributeSet) (*Message, error) {
+func Parse(data []byte, credentials *Credentials, attrs AttributeSet) (*Message, error) {
   parser := Parser{new(Message), credentials, attrs, data, 0}
   err := parser.Parse()
   if err != nil {
@@ -67,7 +67,9 @@ func Parse(data []byte, credentials Credentials, attrs AttributeSet) (*Message, 
 }
 
 func (p *Parser) Parse() error {
-	p.Message.Credentials = p.Credentials
+	if p.Credentials != nil {
+		p.Message.Credentials = *p.Credentials
+	}
 	p.Message.Attributes = []Attribute{}
 	if err := p.Message.Header.Decode(p.Data); err != nil {
 		return err

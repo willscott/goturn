@@ -41,64 +41,82 @@ const (
 	ReservationToken                        = 0x22
 )
 
-func ParseTurn(data []byte, credentials common.Credentials) (*common.Message, error) {
+func ParseTurn(data []byte, credentials *common.Credentials) (*common.Message, error) {
 	return common.Parse(data, credentials, turn.AttributeSet())
 }
 
-func NewAllocateRequest(inResponseTo *common.Message) (*common.Message, error) {
+func newMsg(htype common.HeaderType) (*common.Message, error) {
 	message := common.Message{
 		Header: common.Header{
-			Type: AllocateRequest,
+			Type: htype,
 		},
 	}
 	_, err := rand.Read(message.Header.Id[:])
+	return &message, err
+}
 
-	//Include a RequestedTransportAttribute = UDP
-	if inResponseTo == nil {
-		message.Attributes = []common.Attribute{&turn.RequestedTransportAttribute{17}}
-	} else {
-		message.Credentials = inResponseTo.Credentials
-		message.Attributes = []common.Attribute{&turn.RequestedTransportAttribute{17},
+func NewAllocateRequest(network string, authenticated bool) (*common.Message, error) {
+	message,err := newMsg(AllocateRequest)
+
+	net := uint8(17)
+	if network == "tcp" || network == "tcp4" || network == "tcp6" {
+		net = 6
+	}
+
+	if authenticated == true {
+		message.Attributes = []common.Attribute{&turn.RequestedTransportAttribute{net},
 			&stun.NonceAttribute{},
 			&stun.UsernameAttribute{},
 			&stun.RealmAttribute{},
 			&stun.MessageIntegrityAttribute{},
 			&stun.FingerprintAttribute{}}
+		} else {
+			message.Attributes = []common.Attribute{&turn.RequestedTransportAttribute{net}}
 	}
 
-	return &message, err
+	return message, err
 }
 
-func NewPermissionRequest(credentials common.Credentials, to net.IP) (*common.Message, error) {
-	message := common.Message{
-		Header: common.Header{
-			Type: CreatePermissionRequest,
-		},
-	}
-	_, err := rand.Read(message.Header.Id[:])
+func NewPermissionRequest(to net.Addr) (*common.Message, error) {
+	message,err := newMsg(CreatePermissionRequest)
 
-	message.Credentials = credentials
-	family := uint16(1)
-	if to.To4() == nil {
-		family = 2
-	}
 	message.Attributes = []common.Attribute{&stun.NonceAttribute{},
-		&turn.XorPeerAddressAttribute{family, 0, to},
 		&stun.UsernameAttribute{},
 		&stun.RealmAttribute{},
 		&stun.MessageIntegrityAttribute{},
 		&stun.FingerprintAttribute{}}
 
-	return &message, err
+  turn.AddXorPeerAddressAttribute(message, to)
+
+	return message, err
+}
+
+func NewConnectRequest(to net.Addr) (*common.Message, error) {
+	message,err := newMsg(ConnectRequest)
+
+	message.Attributes = []common.Attribute{&stun.NonceAttribute{},
+		&stun.UsernameAttribute{},
+		&stun.RealmAttribute{},
+		&stun.MessageIntegrityAttribute{},
+		&stun.FingerprintAttribute{}}
+
+  turn.AddXorPeerAddressAttribute(message, to)
+
+	return message, err
+}
+
+func NewConnectionBindRequest(connectionID uint32) (*common.Message, error) {
+	message, err := newMsg(ConnectionBindRequest)
+
+	message.Attributes = []common.Attribute{
+		&turn.ConnectionIdAttribute{connectionID},
+	}
+	return message, err
 }
 
 func NewSendIndication(host net.IP, port uint16, data []byte) (*common.Message, error) {
-	message := common.Message{
-		Header: common.Header{
-			Type: SendIndication,
-		},
-	}
-	_, err := rand.Read(message.Header.Id[:])
+	message,err := newMsg(SendIndication)
+
 	family := uint16(1)
 	if host.To4() == nil {
 		family = 2
@@ -106,5 +124,5 @@ func NewSendIndication(host net.IP, port uint16, data []byte) (*common.Message, 
 	message.Attributes = []common.Attribute{&turn.XorPeerAddressAttribute{family, port, host},
 		&turn.DataAttribute{data}}
 
-	return &message, err
+	return message, err
 }

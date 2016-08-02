@@ -2,6 +2,8 @@ package turn
 
 import (
   "bytes"
+  "errors"
+  "fmt"
 	common "github.com/willscott/goturn/common"
   "github.com/willscott/goturn/stun"
 	"net"
@@ -19,6 +21,44 @@ type XorPeerAddressAttribute struct {
 
 func NewXorPeerAddressAttribute() common.Attribute {
 	return common.Attribute(new(XorPeerAddressAttribute))
+}
+
+func (x *XorPeerAddressAttribute) String() string {
+	return net.JoinHostPort(x.Address.String(), fmt.Sprintf("%d", x.Port))
+}
+
+func AddXorPeerAddressAttribute(msg *common.Message, to net.Addr) error {
+  family := uint16(1)
+  port := uint16(0)
+  host := net.IP{}
+
+  switch to.Network() {
+    case "tcp6":
+      family = 2
+    case "tcp", "tcp4":
+      addr, _ := net.ResolveTCPAddr(to.Network(), to.String())
+      host = addr.IP
+      port = uint16(addr.Port)
+      break
+    case "udp6":
+      family = 2
+    case "udp", "udp4":
+      addr, _ := net.ResolveUDPAddr(to.Network(), to.String())
+      host = addr.IP
+      port = uint16(addr.Port)
+      break
+    case "ip6":
+      family = 2
+    case "ip", "ip4", "":
+      addr, _ := net.ResolveIPAddr(to.Network(), to.String())
+      host = addr.IP
+      break
+    default:
+      return errors.New("Invalid network address.")
+  }
+
+  msg.Attributes = append([]common.Attribute{&XorPeerAddressAttribute{family, port, host}}, msg.Attributes...)
+  return nil
 }
 
 func (h *XorPeerAddressAttribute) Type() common.AttributeType {

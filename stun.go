@@ -20,11 +20,13 @@ const (
 	AlternateServer common.AttributeType = 0x8023
 )
 
+// Parse a message in RFC 5389 STUN format. Attributes defined in subsequent
+// standards will be treated as 'unknown'.
 func ParseStun(data []byte) (*common.Message, error) {
-	return common.Parse(data, common.Credentials{}, stun.StunAttributes)
+	return common.Parse(data, nil, stun.StunAttributes)
 }
 
-//Convienence functions for making commonly used data structures.
+// Create a STUN message representing a client binding request.
 func NewBindingRequest() (*common.Message, error) {
 	message := common.Message{
 		Header: common.Header{

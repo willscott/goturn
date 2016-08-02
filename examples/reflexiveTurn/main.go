@@ -7,7 +7,6 @@ import (
 	"github.com/willscott/goturn"
   "github.com/willscott/goturn/stun"
   "github.com/willscott/goturn/turn"
-	common "github.com/willscott/goturn/common"
 	"io/ioutil"
 	"log"
 	"net"
@@ -64,7 +63,7 @@ func main() {
   defer c.Close()
 
 	// construct allocate message
-	packet, err := goturn.NewAllocateRequest(nil)
+	packet, err := goturn.NewAllocateRequest("udp", false)
 	if err != nil {
 		log.Fatal("Failed to generate request packet:", err)
 	}
@@ -90,7 +89,7 @@ func main() {
 
 	// response is going to tell us we're unauthorized, but will provide
 	// a nonce and realm.
-	response, err := goturn.ParseTurn(b[0:n], common.Credentials{})
+	response, err := goturn.ParseTurn(b[0:n], nil)
 	if err != nil {
 		log.Fatal("Could not parse response as a STUN message:", err)
 	}
@@ -100,12 +99,14 @@ func main() {
 	}
 
 	// Allocate with credentials
-	packet, err = goturn.NewAllocateRequest(response)
+	packet, err = goturn.NewAllocateRequest("udp", true)
 	if err != nil {
 		log.Fatal("Failed to generate request packet:", err)
 	}
-	packet.Credentials.Username = creds.Username
-	packet.Credentials.Password = creds.Password
+  credentials := response.Credentials
+	credentials.Username = creds.Username
+	credentials.Password = creds.Password
+  packet.Credentials = credentials
 
 	message, err = packet.Serialize()
 	if err != nil {
@@ -125,7 +126,7 @@ func main() {
 		log.Fatal("Failed to read response: ", err)
 	}
 
-	authResponse, err := goturn.ParseTurn(b[0:n], packet.Credentials)
+	authResponse, err := goturn.ParseTurn(b[0:n], &packet.Credentials)
 	if err != nil {
 		log.Fatal("Could not parse authorized AllocateResponse: ", err)
 	}
@@ -138,7 +139,9 @@ func main() {
   // Request to send back to ourselves.
   mappedAddr := authResponse.GetAttribute(stun.XorMappedAddress)
   myReflexiveAddress := (*mappedAddr).(*stun.XorMappedAddressAttribute)
-  packet, err = goturn.NewPermissionRequest(authResponse.Credentials, myReflexiveAddress.Address)
+  peerAddr, err := net.ResolveUDPAddr("udp", myReflexiveAddress.String())
+  packet, err = goturn.NewPermissionRequest(peerAddr)
+  packet.Credentials = credentials
 
   message, err = packet.Serialize()
 	if err != nil {
@@ -158,7 +161,7 @@ func main() {
 		log.Fatal("Failed to read response: ", err)
 	}
 
-	permissionResponse, err := goturn.ParseTurn(b[0:n], packet.Credentials)
+	permissionResponse, err := goturn.ParseTurn(b[0:n], &packet.Credentials)
 	if err != nil {
 		log.Fatal("Could not parse PermissionResponse: ", err)
 	}
@@ -192,7 +195,7 @@ func main() {
 	}
 
   // Response should be a data indication.
-  dataResponse, err := goturn.ParseTurn(b[0:n], packet.Credentials)
+  dataResponse, err := goturn.ParseTurn(b[0:n], &packet.Credentials)
 	if err != nil {
 		log.Fatal("Could not parse Data Indication: ", err)
 	}

@@ -19,7 +19,7 @@ type XorRelayedAddressAttribute struct {
 }
 
 func (x *XorRelayedAddressAttribute) String() string {
-	return fmt.Sprintf("%s:%d", x.Address, x.Port)
+	return net.JoinHostPort(x.Address.String(), fmt.Sprintf("%d", x.Port))
 }
 
 func NewXorRelayedAddressAttribute() common.Attribute {

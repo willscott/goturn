@@ -1,68 +1,321 @@
 package client
 
 import (
-  "net"
-  "github.com/willscott/goturn/common"
-  "github.com/willscott/goturn"
+  "bufio"
+	"errors"
+  "fmt"
+	"github.com/willscott/goturn"
+	"github.com/willscott/goturn/common"
+	stunattrs "github.com/willscott/goturn/stun"
+	turnattrs "github.com/willscott/goturn/turn"
+	"net"
+	"time"
 )
 
 // The Client maintains state on a connection with a stun/turn server
 
-type STUNClient struct {
-  // The connection handles requests to the server, and can be either UDP,
-  // TCP, or TCP over TLS.
-  net.Conn
+type StunClient struct {
+	// The connection handles requests to the server, and can be either UDP,
+	// TCP, or TCP over TLS.
+	net.Conn
+
+  // A buffered reader helps us read from the connection.
+  reader *bufio.Reader
+
+	// The dialer for making new connections.
+	net.Dialer
+
+	// The credentials used for authenticating communication with the server.
+	*stun.Credentials
+
+	// Timeout until the active connection expires.
+	Timeout time.Duration
+
+	// Time until the next message must be received.
+	Deadline time.Time
 }
 
-func (s *StunClient) readStunPacket() (*stun.Message, error) {
-  // listen for response
-  s.Conn.SetReadDeadline(time.Now().Add(1000 * time.Millisecond))
-  b := make([]byte, 2048)
-  n, err := c.Read(b)
-  if err != nil || n == 0 || n > 2048 {
-    return nil, err
-  }
-  msg, err := goturn.ParseStun(b[:n])
+// Create a new connection to the same remote endpoint, sharing credentials
+// with the current connection
+func (s *StunClient) deriveConnection() (*StunClient, error) {
+	other := new(StunClient)
+	other.Dialer = s.Dialer
+	other.Credentials = s.Credentials
+	other.Timeout = s.Timeout
+
+	conn, err := s.Dialer.Dial("tcp", s.Conn.RemoteAddr().String())
 	if err != nil {
-    return nil, err
+		return nil, err
 	}
-  return msg, nil
+	other.Conn = conn
+	return other, nil
 }
 
+// Send a message from the client.
+func (s *StunClient) send(packet *stun.Message, err error) error {
+	if err != nil {
+		return err
+	}
+	packet.Credentials = *s.Credentials
+
+	message, err := packet.Serialize()
+	if err != nil {
+		return err
+	}
+
+	// send message
+	// TODO: handle not all of message being written.
+	if _, err = s.Conn.Write(message); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Read the next packet off of the connection abstracted by the client.
+// Returns either the next message, or an error if the next set of bytes
+// do not represent a valid message.
+func (s *StunClient) readStunPacket() (*stun.Message, error) {
+	// Set up timeouts for reading.
+  if s.reader == nil {
+    s.reader = bufio.NewReader(s.Conn)
+  }
+	if s.Timeout > 0 {
+		// Initial Deadline
+		if s.Deadline.IsZero() {
+			s.Deadline = time.Now().Add(s.Timeout)
+		}
+		s.Conn.SetReadDeadline(s.Deadline)
+	}
+
+	// Start by reading the header to learn the length of the packet.
+  h, err := s.reader.Peek(20)
+	if err != nil {
+		return nil, err
+	}
+	header := stun.Header{}
+	if err = header.Decode(h); err != nil {
+		return nil, err
+	}
+	if header.Length == 0 {
+		return goturn.ParseTurn(h, s.Credentials)
+	}
+	if header.Length > 2048 {
+		return nil, errors.New("Packet length too long.")
+	}
+  buffer := make([]byte, 20 + header.Length)
+	n, err := s.reader.Read(buffer)
+	if err != nil || uint16(n) != 20 + header.Length {
+		return nil, err
+	}
+
+	if s.Timeout > 0 {
+		s.Deadline = time.Now().Add(s.Timeout)
+	}
+
+	return goturn.ParseTurn(buffer, s.Credentials)
+}
+
+// Request a Stun Binding to learn the Internet-visible address of the current
+// connection.
 func (s *StunClient) Bind() (net.Addr, error) {
-  // construct request message
-  packet, err := goturn.NewBindingRequest()
-  if err != nil {
-    return nil, err
-  }
-
-  message, err := packet.Serialize()
-  if err != nil {
-    return nil, err
-  }
-
-  // send message
-  if _, err = s.Conn.Write(message); err != nil {
-    return nil, err
-  }
-
-  response,err := s.readStunPacket()
-  if err != nil {
-    return nil, err
-  }
-
-  if response.Header.Type != goturn.BindingResponse {
-    return nil, errors.New("Unexpected response type.")
+	// construct request message
+	packet, err := goturn.NewBindingRequest()
+	if err != nil {
+		return nil, err
 	}
-  response.GetAttribute()
+
+	message, err := packet.Serialize()
+	if err != nil {
+		return nil, err
+	}
+
+	// send message
+	if _, err = s.Conn.Write(message); err != nil {
+		return nil, err
+	}
+
+	response, err := s.readStunPacket()
+	if err != nil {
+		return nil, err
+	}
+
+	if response.Header.Type != goturn.BindingResponse {
+		return nil, errors.New("Unexpected response type.")
+	}
+	attr := response.GetAttribute(stunattrs.MappedAddress)
+  port := uint16(0)
+  address := net.IP{}
+
+	if attr != nil {
+	   addr := (*attr).(*stunattrs.MappedAddressAttribute)
+     port = addr.Port
+     address = addr.Address
+  } else {
+		attr = response.GetAttribute(stunattrs.XorMappedAddress)
+    if attr == nil {
+  		return nil, errors.New("No Mapped Address provided.")
+  	}
+    addr := (*attr).(*stunattrs.XorMappedAddressAttribute)
+    port = addr.Port
+    address = addr.Address
+	}
+
+  hostport := net.JoinHostPort(address.String(),fmt.Sprintf("%d",port))
+	if s.Conn.RemoteAddr().Network() == "tcp" {
+		return net.ResolveTCPAddr("tcp", hostport)
+	} else {
+		return net.ResolveUDPAddr("udp", hostport)
+	}
 }
 
-func (s *StunClient) Allocate(stun.Credentials) error {
+func (s *StunClient) allocateUnauthenticated() error {
+	// make a simple allocation message
+	creds := s.Credentials
+	s.Credentials = nil
+	if err := s.send(goturn.NewAllocateRequest(s.Conn.RemoteAddr().Network(), false)); err != nil {
+		return err
+	}
+	s.Credentials = creds
 
+	response, err := s.readStunPacket()
+	if err != nil {
+		return err
+	}
+
+	if response.Credentials.Nonce != nil {
+		s.Credentials.Nonce = response.Credentials.Nonce
+	}
+	if len(response.Credentials.Realm) == 0 {
+		s.Credentials.Realm = response.Credentials.Realm
+	}
+	msgerr := stunattrs.GetError(response)
+	if msgerr.Error() > 0 && msgerr.Error() != 401 {
+		return errors.New("Initial Connection failed " + msgerr.String())
+	}
+	return nil
 }
 
-func (s *StunClient) RequestPermission(net.Addr) error {
+// Request to connect to a Turn server. The Turn protocol uses the term
+// allocation to refer to an authenticated connection with the server.
+// Returns the
+func (s *StunClient) Allocate(c *stun.Credentials) (net.Addr, error) {
+	s.Credentials = c
 
+	if s.Credentials.Nonce == nil {
+		if err := s.allocateUnauthenticated(); err != nil {
+			return nil, err
+		}
+	}
+	if err := s.send(goturn.NewAllocateRequest(s.Conn.RemoteAddr().Network(), true)); err != nil {
+		return nil, err
+	}
+	response, err := s.readStunPacket()
+	if err != nil {
+		return nil, err
+	}
+
+	if response.Header.Type != goturn.AllocateResponse {
+		msgerr := stunattrs.GetError(response)
+		if msgerr.Error() == 442 {
+			// TODO: bad transport; retry w/ other protocol.
+		}
+		if msgerr.Error() > 0 {
+			return nil, errors.New("Connection failed: " + msgerr.String())
+		} else {
+			return nil, errors.New("Connection failed. No Error Provided.")
+		}
+	}
+
+	relayAddr := response.GetAttribute(turnattrs.XorRelayedAddress)
+	relayAddress := (*relayAddr).(*turnattrs.XorRelayedAddressAttribute)
+
+	// TODO: support TCP.
+	// this is based on the requestedTransport sent in the request.
+	return net.ResolveUDPAddr("udp", relayAddress.String())
 }
 
-func (s *StunClient)
+func hostOnly(from net.Addr) net.Addr {
+	host, _, err := net.SplitHostPort(from.String())
+	if err != nil {
+		return from
+	} else {
+		addr, _ := net.ResolveIPAddr("ip", host)
+		return addr
+	}
+}
+
+// Request permission to relay data from a remote address. The Client should
+// already have an authenticated connection with the server, using Allocate,
+// for this request to succeed.
+func (s *StunClient) RequestPermission(from net.Addr) error {
+	if err := s.send(goturn.NewPermissionRequest(hostOnly(from))); err != nil {
+		return err
+	}
+	response, err := s.readStunPacket()
+	if err != nil {
+		return err
+	}
+
+	if response.Header.Type != goturn.CreatePermissionResponse {
+		msgerr := stunattrs.GetError(response)
+		if msgerr.Error() > 0 {
+			return errors.New("Connection failed: " + msgerr.String())
+		} else {
+			return errors.New("Connection failed. No Error Provided.")
+		}
+	}
+	return nil
+}
+
+//Assumes that there is already an allocation for the client.
+func (s *StunClient) Connect(to net.Addr) (net.Conn, error) {
+	if err := s.send(goturn.NewConnectRequest(to)); err != nil {
+		return nil, err
+	}
+	response, err := s.readStunPacket()
+	if err != nil {
+		return nil, err
+	}
+
+	if response.Header.Type != goturn.ConnectResponse {
+		msgerr := stunattrs.GetError(response)
+		if msgerr.Error() > 0 {
+			return nil, errors.New("Connection failed: " + msgerr.String())
+		} else {
+			return nil, errors.New("Connection failed. No Error Provided.")
+		}
+	}
+
+	// extract Connection-id
+	connID := response.GetAttribute(turnattrs.ConnectionId)
+	connectionID := (*connID).(*turnattrs.ConnectionIdAttribute).ConnectionId
+
+	// create the data connection.
+	conn, err := s.deriveConnection()
+	if err != nil {
+		return nil, err
+	}
+
+	if err := conn.send(goturn.NewConnectionBindRequest(connectionID)); err != nil {
+		conn.Conn.Close()
+		return nil, err
+	}
+
+	response, err = conn.readStunPacket()
+	if err != nil {
+		conn.Conn.Close()
+		return nil, err
+	}
+
+	if response.Header.Type != goturn.ConnectionBindResponse {
+		conn.Conn.Close()
+		msgerr := stunattrs.GetError(response)
+		if msgerr.Error() > 0 {
+			return nil, errors.New("Connection failed: " + msgerr.String())
+		} else {
+			return nil, errors.New("Connection failed. No Error Provided.")
+		}
+	}
+
+	return conn.Conn, nil
+}
