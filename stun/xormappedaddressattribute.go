@@ -41,10 +41,12 @@ func XorAddressData(h *XorMappedAddressAttribute, msg *stun.Message) ([]byte, er
 	if h.Family == 1 {
 		xoraddress = make([]byte, 4)
 		binary.BigEndian.PutUint32(xoraddress, stun.MagicCookie)
+		h.Address = h.Address.To4()
 	} else {
 		xoraddress = make([]byte, 16)
 		binary.BigEndian.PutUint32(xoraddress, stun.MagicCookie)
 		copy(xoraddress[4:16], msg.Header.Id[:])
+		h.Address = h.Address.To16()
 	}
 	for i, _ := range xoraddress {
 		xoraddress[i] ^= h.Address[i]
