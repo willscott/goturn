@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"github.com/willscott/goturn/common"
 )
 
@@ -18,7 +19,7 @@ type ErrorCodeAttribute struct {
 }
 
 func (h ErrorCodeAttribute) String() string {
-	return string(h.Class * 100 + h.Number) + ": " + h.Phrase
+	return fmt.Sprintf("%d: %s", int(h.Class) * 100 + int(h.Number), h.Phrase)
 }
 
 func NewErrorCodeAttribute() stun.Attribute {
@@ -30,7 +31,7 @@ func (h *ErrorCodeAttribute) Type() stun.AttributeType {
 }
 
 func (h *ErrorCodeAttribute) Error() int {
-	return int(h.Class * 100 + h.Number)
+	return int(h.Class) * 100 + int(h.Number)
 }
 
 func GetError(msg *stun.Message) *ErrorCodeAttribute {

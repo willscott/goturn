@@ -171,7 +171,7 @@ func (s *StunClient) Bind() (net.Addr, error) {
 func (s *StunClient) allocateUnauthenticated() error {
 	// make a simple allocation message
 	creds := s.Credentials
-	s.Credentials = nil
+	s.Credentials = &stun.Credentials{}
 	if err := s.send(goturn.NewAllocateRequest(s.Conn.RemoteAddr().Network(), false)); err != nil {
 		return err
 	}
@@ -185,7 +185,7 @@ func (s *StunClient) allocateUnauthenticated() error {
 	if response.Credentials.Nonce != nil {
 		s.Credentials.Nonce = response.Credentials.Nonce
 	}
-	if len(response.Credentials.Realm) == 0 {
+	if len(response.Credentials.Realm) > 0 {
 		s.Credentials.Realm = response.Credentials.Realm
 	}
 	msgerr := stunattrs.GetError(response)
