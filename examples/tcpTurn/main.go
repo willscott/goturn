@@ -12,7 +12,7 @@ import (
 	"net/url"
 )
 
-var server = flag.String("url", "http://myip.info", "URL to fetch")
+var webpage = flag.String("url", "http://myip.info", "URL to fetch")
 var credentialURL = flag.String("credentials", "https://computeengineondemand.appspot.com/turn?username=prober&key=4080218913", "credential URL")
 
 type Credentials struct {
@@ -46,14 +46,27 @@ func main() {
 		log.Fatal("Invalid server URI:", err)
 	}
 
-  raddr, err := net.ResolveTCPAddr("tcp", server.Opaque)
+  webpageUrl,err := url.Parse(*webpage)
+  if err != nil {
+		log.Fatal("Invalid request URI:", err)
+	}
+  webpageHost,err := net.LookupIP(webpageUrl.Host)
+  if err != nil {
+    log.Fatal("Could not determine host IP of " + webpageUrl.Host, err)
+  }
+  webpagePort := uint16(80)
+  if webpageUrl.Scheme == "https" {
+    webpagePort = uint16(443)
+  }
+
+  turnaddr, err := net.ResolveTCPAddr("tcp", server.Opaque)
   if err != nil {
     log.Fatal("Could resolve remote address:", err)
   }
   log.Printf("Negotiating with %s", server.Opaque)
 
 	// dial
-	c, err := net.Dial("tcp", raddr.String())
+	c, err := net.Dial("tcp", turnaddr.String())
 	if err != nil {
 		log.Fatal("Could open TCP Connection:", err)
 	}
@@ -64,5 +77,33 @@ func main() {
   if _, err = client.Allocate(&credentials); err != nil {
     log.Fatal("Could not authenticate with server: ", err)
   }
-  log.Printf("Authenticated with server.")
+
+  endpoint := stun.NewAddress("tcp", webpageHost[0], webpagePort)
+  if err = client.RequestPermission(endpoint); err != nil {
+    log.Fatal("Could not request permission:", err)
+  }
+
+  conn, err := client.Connect(endpoint)
+  if err != nil {
+    log.Fatal("Could not establish connection:", err)
+  }
+
+  log.Printf("Connection established.")
+
+  dumbDialer := func(network, address string) (net.Conn, error) {
+    return conn, nil
+  }
+
+  transport := &http.Transport{Dial: dumbDialer}
+  httpClient := &http.Client{Transport: transport}
+  httpResp, err := httpClient.Get(*webpage)
+  if err != nil {
+    log.Fatal("Failed to get webpage", err)
+  }
+  defer httpResp.Body.Close()
+  httpBody, err := ioutil.ReadAll(httpResp.Body)
+  if err != nil {
+    log.Fatal("Failed to read response", err)
+  }
+  log.Printf(string(httpBody))
 }

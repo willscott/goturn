@@ -1,10 +1,10 @@
 package turn
 
 import (
-  "bytes"
-  "fmt"
+	"bytes"
+	"fmt"
 	common "github.com/willscott/goturn/common"
-  "github.com/willscott/goturn/stun"
+	"github.com/willscott/goturn/stun"
 	"net"
 )
 
@@ -26,33 +26,33 @@ func NewXorRelayedAddressAttribute() common.Attribute {
 	return common.Attribute(new(XorRelayedAddressAttribute))
 }
 
-func (h *XorRelayedAddressAttribute) Type() common.AttributeType {
+func (x *XorRelayedAddressAttribute) Type() common.AttributeType {
 	return XorRelayedAddress
 }
 
 func (h *XorRelayedAddressAttribute) Encode(msg *common.Message) ([]byte, error) {
-  buf := new(bytes.Buffer)
+	buf := new(bytes.Buffer)
 	if err := common.WriteHeader(buf, common.Attribute(h), msg); err != nil {
 		return nil, err
 	}
-  mapped := stun.XorMappedAddressAttribute(*h)
-  bytes, err := stun.XorAddressData(&mapped, msg)
-  if err != nil {
-  	return nil, err
-  }
-  buf.Write(bytes)
-  return buf.Bytes(), nil
+	mapped := stun.XorMappedAddressAttribute(*h)
+	bytes, err := stun.XorAddressData(&mapped, msg)
+	if err != nil {
+		return nil, err
+	}
+	buf.Write(bytes)
+	return buf.Bytes(), nil
 }
 
 func (h *XorRelayedAddressAttribute) Decode(data []byte, length uint16, p *common.Parser) error {
-  mapped := stun.XorMappedAddressAttribute(*h)
-  if err := mapped.Decode(data, length, p); err != nil {
-    return err
-  }
-  h.Family = mapped.Family
-  h.Port = mapped.Port
-  h.Address = mapped.Address
-  return nil
+	mapped := stun.XorMappedAddressAttribute(*h)
+	if err := mapped.Decode(data, length, p); err != nil {
+		return err
+	}
+	h.Family = mapped.Family
+	h.Port = mapped.Port
+	h.Address = mapped.Address
+	return nil
 }
 
 func (h *XorRelayedAddressAttribute) Length(_ *common.Message) uint16 {

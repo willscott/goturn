@@ -1,12 +1,12 @@
 package main
 
 import (
-  "bytes"
+	"bytes"
 	"encoding/json"
 	"flag"
 	"github.com/willscott/goturn"
-  "github.com/willscott/goturn/stun"
-  "github.com/willscott/goturn/turn"
+	"github.com/willscott/goturn/stun"
+	"github.com/willscott/goturn/turn"
 	"io/ioutil"
 	"log"
 	"net"
@@ -51,16 +51,16 @@ func main() {
 	log.Printf("Negotiating with %s", server.Opaque)
 
 	// dial
-  raddr, err := net.ResolveUDPAddr("udp", server.Opaque)
-  if err != nil {
-    log.Fatal("Could resolve remote address:", err)
-  }
+	raddr, err := net.ResolveUDPAddr("udp", server.Opaque)
+	if err != nil {
+		log.Fatal("Could resolve remote address:", err)
+	}
 
-  c, err := net.ListenUDP("udp", &net.UDPAddr{ IP: net.IPv4(0,0,0,0), Port: 0 })
-  if err != nil {
+	c, err := net.ListenUDP("udp", &net.UDPAddr{IP: net.IPv4(0, 0, 0, 0), Port: 0})
+	if err != nil {
 		log.Fatal("Could open UDP Connection:", err)
 	}
-  defer c.Close()
+	defer c.Close()
 
 	// construct allocate message
 	packet, err := goturn.NewAllocateRequest("udp", false)
@@ -103,10 +103,10 @@ func main() {
 	if err != nil {
 		log.Fatal("Failed to generate request packet:", err)
 	}
-  credentials := response.Credentials
+	credentials := response.Credentials
 	credentials.Username = creds.Username
 	credentials.Password = creds.Password
-  packet.Credentials = credentials
+	packet.Credentials = credentials
 
 	message, err = packet.Serialize()
 	if err != nil {
@@ -134,21 +134,21 @@ func main() {
 	if authResponse.Header.Type != goturn.AllocateResponse {
 		log.Fatal("Response message was not responding to allocation: ", authResponse.Header)
 	}
-  log.Printf("Authenticated and granted Port allocation.")
+	log.Printf("Authenticated and granted Port allocation.")
 
-  // Request to send back to ourselves.
-  mappedAddr := authResponse.GetAttribute(stun.XorMappedAddress)
-  myReflexiveAddress := (*mappedAddr).(*stun.XorMappedAddressAttribute)
-  peerAddr, err := net.ResolveUDPAddr("udp", myReflexiveAddress.String())
-  packet, err = goturn.NewPermissionRequest(peerAddr)
-  packet.Credentials = credentials
+	// Request to send back to ourselves.
+	mappedAddr := authResponse.GetAttribute(stun.XorMappedAddress)
+	myReflexiveAddress := (*mappedAddr).(*stun.XorMappedAddressAttribute)
+	peerAddr, err := net.ResolveUDPAddr("udp", myReflexiveAddress.String())
+	packet, err = goturn.NewPermissionRequest(peerAddr)
+	packet.Credentials = credentials
 
-  message, err = packet.Serialize()
+	message, err = packet.Serialize()
 	if err != nil {
 		log.Fatal("Failed to serialize packet: ", err)
 	}
 
-  // send message
+	// send message
 	_, err = c.WriteToUDP(message, raddr)
 	if err != nil {
 		log.Fatal("Failed to send message: ", err)
@@ -166,22 +166,22 @@ func main() {
 		log.Fatal("Could not parse PermissionResponse: ", err)
 	}
 
-  if permissionResponse.Header.Type != goturn.CreatePermissionResponse {
+	if permissionResponse.Header.Type != goturn.CreatePermissionResponse {
 		log.Fatal("Response message was not okay with permission request: ", permissionResponse.Header)
 	}
-  log.Printf("Granted Permission to send to %s.", myReflexiveAddress.Address)
+	log.Printf("Granted Permission to send to %s.", myReflexiveAddress.Address)
 
-  // Send some data.
-  packet, err = goturn.NewSendIndication(myReflexiveAddress.Address, myReflexiveAddress.Port, []byte("Hello World."))
-  message, err = packet.Serialize()
-  if err != nil {
+	// Send some data.
+	packet, err = goturn.NewSendIndication(myReflexiveAddress.Address, myReflexiveAddress.Port, []byte("Hello World."))
+	message, err = packet.Serialize()
+	if err != nil {
 		log.Fatal("Failed to serialize packet: ", err)
 	}
 
-  // Figure out relay address
-  relayAddr := authResponse.GetAttribute(turn.XorRelayedAddress)
-  relayAddress := (*relayAddr).(*turn.XorRelayedAddressAttribute)
-  relayUDPAddr, _ := net.ResolveUDPAddr("udp", relayAddress.String())
+	// Figure out relay address
+	relayAddr := authResponse.GetAttribute(turn.XorRelayedAddress)
+	relayAddress := (*relayAddr).(*turn.XorRelayedAddressAttribute)
+	relayUDPAddr, _ := net.ResolveUDPAddr("udp", relayAddress.String())
 	_, err = c.WriteToUDP(message, relayUDPAddr)
 	if err != nil {
 		log.Fatal("Failed to send message: ", err)
@@ -194,23 +194,23 @@ func main() {
 		log.Fatal("Failed to read response: ", err)
 	}
 
-  // Response should be a data indication.
-  dataResponse, err := goturn.ParseTurn(b[0:n], &packet.Credentials)
+	// Response should be a data indication.
+	dataResponse, err := goturn.ParseTurn(b[0:n], &packet.Credentials)
 	if err != nil {
 		log.Fatal("Could not parse Data Indication: ", err)
 	}
 
-  if dataResponse.Header.Type != goturn.DataIndication {
+	if dataResponse.Header.Type != goturn.DataIndication {
 		log.Fatal("Did not Receive data after sending: ", dataResponse.Header)
 	}
-  dataPtr := dataResponse.GetAttribute(turn.Data)
-  if dataPtr == nil {
-    log.Fatal("No Data Attribute in send response: ", dataResponse.Header)
-  }
-  dataAttr := (*dataPtr).(*turn.DataAttribute)
-  if bytes.Compare(dataAttr.Data, message) == 0 {
-    log.Printf("Successfully sent and received \"hello world\".")
-  } else {
-    log.Fatal("Received data didn't match what was expected. Got: %s.", dataAttr.Data)
-  }
+	dataPtr := dataResponse.GetAttribute(turn.Data)
+	if dataPtr == nil {
+		log.Fatal("No Data Attribute in send response: ", dataResponse.Header)
+	}
+	dataAttr := (*dataPtr).(*turn.DataAttribute)
+	if bytes.Compare(dataAttr.Data, message) == 0 {
+		log.Printf("Successfully sent and received \"hello world\".")
+	} else {
+		log.Fatal("Received data didn't match what was expected. Got: %s.", dataAttr.Data)
+	}
 }

@@ -13,7 +13,7 @@ type Message struct {
 func (m *Message) Serialize() ([]byte, error) {
 	var bodylength uint16
 	for _, att := range m.Attributes {
-    len := uint16(4 * int((att.Length(m)+7)/4))
+		len := uint16(4 * int((att.Length(m)+7)/4))
 		bodylength += len
 	}
 
@@ -41,29 +41,29 @@ func (m *Message) Serialize() ([]byte, error) {
 }
 
 func (m *Message) GetAttribute(typ AttributeType) *Attribute {
-  for _, att := range m.Attributes {
-    if att.Type() == typ {
-      return &att
-    }
-  }
-  return nil
+	for _, att := range m.Attributes {
+		if att.Type() == typ {
+			return &att
+		}
+	}
+	return nil
 }
 
 type Parser struct {
-  *Message
-  *Credentials
-  AttributeSet
-  Data []byte
-  Offset uint16
+	*Message
+	*Credentials
+	AttributeSet
+	Data   []byte
+	Offset uint16
 }
 
 func Parse(data []byte, credentials *Credentials, attrs AttributeSet) (*Message, error) {
-  parser := Parser{new(Message), credentials, attrs, data, 0}
-  err := parser.Parse()
-  if err != nil {
-    return nil, err
-  }
-  return parser.Message, nil
+	parser := Parser{new(Message), credentials, attrs, data, 0}
+	err := parser.Parse()
+	if err != nil {
+		return nil, err
+	}
+	return parser.Message, nil
 }
 
 func (p *Parser) Parse() error {
@@ -74,8 +74,8 @@ func (p *Parser) Parse() error {
 	if err := p.Message.Header.Decode(p.Data); err != nil {
 		return err
 	}
-  data := p.Data[20:]
-  p.Offset = 20
+	data := p.Data[20:]
+	p.Offset = 20
 	if len(data) != int(p.Message.Header.Length) {
 		return errors.New("Message has incorrect Length")
 	}
@@ -87,7 +87,7 @@ func (p *Parser) Parse() error {
 		p.Message.Attributes = append(p.Message.Attributes, *attribute)
 		// 4 byte header and rounded up to next multiple of 4
 		len := 4 * int(((*attribute).Length(p.Message)+7)/4)
-    p.Offset += uint16(len)
+		p.Offset += uint16(len)
 		data = data[len:]
 	}
 	return nil
