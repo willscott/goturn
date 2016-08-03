@@ -25,7 +25,7 @@ func (h *DataAttribute) Type() stun.AttributeType {
 func (h *DataAttribute) Encode(msg *stun.Message) ([]byte, error) {
 	buf := new(bytes.Buffer)
 	err := stun.WriteHeader(buf, stun.Attribute(h), msg)
-  buf.Write(h.Data)
+	buf.Write(h.Data)
 
 	if err != nil {
 		return nil, err
@@ -38,7 +38,7 @@ func (h *DataAttribute) Decode(data []byte, length uint16, _ *stun.Parser) error
 		return errors.New("Truncated Data Attribute")
 	}
 	h.Data = make([]byte, length)
-  copy(h.Data, data[:])
+	copy(h.Data, data[:])
 	return nil
 }
 

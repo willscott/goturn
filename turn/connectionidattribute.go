@@ -38,7 +38,7 @@ func (h *ConnectionIdAttribute) Decode(data []byte, length uint16, _ *stun.Parse
 	if uint16(len(data)) < length {
 		return errors.New("Truncated ConnectionID Attribute")
 	}
-	h.Lifetime = binary.BigEndian.Uint32(data[0:4])
+	h.ConnectionId = binary.BigEndian.Uint32(data[0:4])
 	return nil
 }
 

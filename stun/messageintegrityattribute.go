@@ -91,7 +91,7 @@ func (h *MessageIntegrityAttribute) Decode(data []byte, length uint16, p *stun.P
 		return errors.New("Truncated MessageIntegrity Attribute")
 	}
 
-	key := makeKey(&p.Credentials)
+	key := makeKey(p.Credentials)
 	if key == nil {
 		return errors.New("No credentials to decrypt MessageIntegrity Attribute")
 	}

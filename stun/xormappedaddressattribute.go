@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"github.com/willscott/goturn/common"
 	"net"
 )
@@ -22,6 +23,10 @@ func NewXorMappedAddressAttribute() stun.Attribute {
 	return stun.Attribute(new(XorMappedAddressAttribute))
 }
 
+func (h XorMappedAddressAttribute) String() string {
+	return net.JoinHostPort(h.Address.String(), fmt.Sprintf("%d", h.Port))
+}
+
 func (h *XorMappedAddressAttribute) Type() stun.AttributeType {
 	return XorMappedAddress
 }
@@ -36,10 +41,12 @@ func XorAddressData(h *XorMappedAddressAttribute, msg *stun.Message) ([]byte, er
 	if h.Family == 1 {
 		xoraddress = make([]byte, 4)
 		binary.BigEndian.PutUint32(xoraddress, stun.MagicCookie)
+		h.Address = h.Address.To4()
 	} else {
 		xoraddress = make([]byte, 16)
 		binary.BigEndian.PutUint32(xoraddress, stun.MagicCookie)
 		copy(xoraddress[4:16], msg.Header.Id[:])
+		h.Address = h.Address.To16()
 	}
 	for i, _ := range xoraddress {
 		xoraddress[i] ^= h.Address[i]

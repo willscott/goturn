@@ -24,5 +24,6 @@ _testmain.go
 *.prof
 
 #binaries
-examples/reflexiveTurn/reflexiveTurn
 examples/getIP/getIP
+examples/reflexiveTurn/reflexiveTurn
+examples/tcpTurn/tcpTurn
