@@ -39,7 +39,7 @@ type StunClient struct {
 func (s *StunClient) deriveConnection() (*StunClient, error) {
 	other := new(StunClient)
 	other.Dialer = s.Dialer
-	other.Credentials = s.Credentials
+	other.Credentials = s.Credentials.ForNewConnection()
 	other.Timeout = s.Timeout
 
 	conn, err := s.Dialer.Dial(s.Conn.RemoteAddr().Network(), s.Conn.RemoteAddr().String())
@@ -273,6 +273,22 @@ func (s *StunClient) Connect(to net.Addr) (net.Conn, error) {
 	}
 
 	response, err = conn.readStunPacket()
+	if err != nil {
+		conn.Conn.Close()
+		return nil, err
+	}
+
+  // Need to get nonce for the new connection first.
+  if response.Credentials.Nonce != nil {
+    conn.Credentials.Nonce = response.Credentials.Nonce
+  }
+
+  if err := conn.send(goturn.NewConnectionBindRequest(connectionID)); err != nil {
+		conn.Conn.Close()
+		return nil, err
+	}
+
+  response, err = conn.readStunPacket()
 	if err != nil {
 		conn.Conn.Close()
 		return nil, err

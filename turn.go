@@ -94,7 +94,8 @@ func NewPermissionRequest(to net.Addr) (*common.Message, error) {
 func NewConnectRequest(to net.Addr) (*common.Message, error) {
 	message, err := newMsg(ConnectRequest)
 
-	message.Attributes = []common.Attribute{&stun.NonceAttribute{},
+	message.Attributes = []common.Attribute{
+		&stun.NonceAttribute{},
 		&stun.UsernameAttribute{},
 		&stun.RealmAttribute{},
 		&stun.MessageIntegrityAttribute{},
@@ -110,6 +111,11 @@ func NewConnectionBindRequest(connectionID uint32) (*common.Message, error) {
 
 	message.Attributes = []common.Attribute{
 		&turn.ConnectionIdAttribute{connectionID},
+		&stun.NonceAttribute{},
+		&stun.UsernameAttribute{},
+		&stun.RealmAttribute{},
+		&stun.MessageIntegrityAttribute{},
+		&stun.FingerprintAttribute{},
 	}
 	return message, err
 }

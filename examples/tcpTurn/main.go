@@ -12,7 +12,7 @@ import (
 	"net/url"
 )
 
-var webpage = flag.String("url", "http://myip.info", "URL to fetch")
+var webpage = flag.String("url", "https://wtfismyip.com/text", "URL to fetch")
 var credentialURL = flag.String("credentials", "https://computeengineondemand.appspot.com/turn?username=prober&key=4080218913", "credential URL")
 
 type Credentials struct {
@@ -105,5 +105,5 @@ func main() {
   if err != nil {
     log.Fatal("Failed to read response", err)
   }
-  log.Printf(string(httpBody))
+  log.Printf("Received Webpage Body is: %s", string(httpBody))
 }
