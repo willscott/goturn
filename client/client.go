@@ -22,7 +22,7 @@ type StunClient struct {
 	reader *bufio.Reader
 
 	// The dialer for making new connections.
-	net.Dialer
+	*net.Dialer
 
 	// The credentials used for authenticating communication with the server.
 	*stun.Credentials

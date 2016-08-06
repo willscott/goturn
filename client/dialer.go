@@ -31,6 +31,8 @@ func NewDialer(credentials *stun.Credentials, control net.Conn) (d *TurnDialer, 
 	}
   d.LocalAddr = addr
 
+  //TODO: functional cancel channel.
+
 	return d, nil
 }
 
