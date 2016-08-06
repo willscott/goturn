@@ -256,9 +256,9 @@ func (s *StunClient) Connect(to net.Addr) (net.Conn, error) {
 
 	// extract Connection-id
 	connID := response.GetAttribute(turnattrs.ConnectionId)
-  if connID == nil {
-    return nil, errors.New("No Connection ID provided.")
-  }
+	if connID == nil {
+		return nil, errors.New("No Connection ID provided.")
+	}
 	connectionID := (*connID).(*turnattrs.ConnectionIdAttribute).ConnectionId
 
 	// create the data connection.
@@ -278,17 +278,17 @@ func (s *StunClient) Connect(to net.Addr) (net.Conn, error) {
 		return nil, err
 	}
 
-  // Need to get nonce for the new connection first.
-  if response.Credentials.Nonce != nil {
-    conn.Credentials.Nonce = response.Credentials.Nonce
-  }
+	// Need to get nonce for the new connection first.
+	if response.Credentials.Nonce != nil {
+		conn.Credentials.Nonce = response.Credentials.Nonce
+	}
 
-  if err := conn.send(goturn.NewConnectionBindRequest(connectionID)); err != nil {
+	if err := conn.send(goturn.NewConnectionBindRequest(connectionID)); err != nil {
 		conn.Conn.Close()
 		return nil, err
 	}
 
-  response, err = conn.readStunPacket()
+	response, err = conn.readStunPacket()
 	if err != nil {
 		conn.Conn.Close()
 		return nil, err

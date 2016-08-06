@@ -21,29 +21,35 @@ Full Example
 ```golang
 import (
   "fmt"
+  "ioutil"
   "net"
+  "net/http"
 
-  "github.com/willscott/goturn"
-  "github.com/miekg/dns"
+  "github.com/willscott/goturn/client"
 )
 
-dialTurn, err:= goturn.TURNDialer(goturn.UDP, "turn:127.0.0.1")
+// Connect to the stun/turn server
+conn, err := net.Dial("tcp", "127.0.0.1:19302")
+if err != nil {
+  log.Fatal("Could open TCP Connection:", err)
+}
+defer c.Close()
+
+credentials := client.LongtermCredentials("username", "password")
+dialer, err := client.NewDialer(credentials, conn
 if err != nil {
   fatalf("Failed to obtain dialer: %v\n", err)
 }
 
-udpConn, err := dialTurn.Dial("udp", "8.8.8.8:53")
+httpClient := &http.Client{Transport: &http.Transport{Dial: dialer.Dial}}
+httpResp, err := httpClient.Get("http://www.google.com/")
 if err != nil {
-  fatalf("Failed to dial: %v\n", err)
+  log.Fatal("Failed to get webpage", err)
 }
-
-co := &dns.Conn{Conn: udpConn}
-m := new(dns.Msg)
-m.SetQuestion("google.com.", dns.TypeA)
-co.WriteMsg(m)
-in, _ := co.ReadMsg()
-co.Close()
-if t, ok := in.Answer[0].(*dns.A); ok {
-  fmt.Printf("Successfully Resolved google.com to %v through turn\n", t)
+defer httpResp.Body.Close()
+httpBody, err := ioutil.ReadAll(httpResp.Body)
+if err != nil {
+  log.Fatal("Failed to read response", err)
 }
+log.Printf("Received Webpage Body is: %s", string(httpBody))
 ```

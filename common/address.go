@@ -60,12 +60,16 @@ func (a *Address) Host() net.IP {
 
 func NewAddress(network string, host net.IP, port uint16) Address {
 	hostport := net.JoinHostPort(host.String(), fmt.Sprintf("%d", port))
+	return NewAddressFromString(network, hostport)
+}
+
+func NewAddressFromString(network, address string) Address {
 	switch network {
 	case "tcp", "tcp4", "tcp6":
-		addr, _ := net.ResolveTCPAddr(network, hostport)
+		addr, _ := net.ResolveTCPAddr(network, address)
 		return Address{addr}
 	case "udp", "udp4", "udp6":
-		addr, _ := net.ResolveUDPAddr(network, hostport)
+		addr, _ := net.ResolveUDPAddr(network, address)
 		return Address{addr}
 	default:
 		return Address{}
