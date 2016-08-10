@@ -25,7 +25,7 @@ func (h *UnknownAttributesAttribute) Type() stun.AttributeType {
 
 func (h *UnknownAttributesAttribute) Encode(msg *stun.Message) ([]byte, error) {
 	buf := new(bytes.Buffer)
-	err := stun.WriteHeader(buf, stun.Attribute(h), msg)
+	err := stun.WriteAttributeHeader(buf, stun.Attribute(h), msg)
 	for _, att := range h.Attributes {
 		if err := binary.Write(buf, binary.BigEndian, att); err != nil {
 			return nil, err

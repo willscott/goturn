@@ -28,7 +28,7 @@ func (h *MappedAddressAttribute) Type() stun.AttributeType {
 
 func (h *MappedAddressAttribute) Encode(msg *stun.Message) ([]byte, error) {
 	buf := new(bytes.Buffer)
-	err := stun.WriteHeader(buf, stun.Attribute(h), msg)
+	err := stun.WriteAttributeHeader(buf, stun.Attribute(h), msg)
 	err = binary.Write(buf, binary.BigEndian, h.Family)
 	err = binary.Write(buf, binary.BigEndian, h.Port)
 	err = binary.Write(buf, binary.BigEndian, h.Address)

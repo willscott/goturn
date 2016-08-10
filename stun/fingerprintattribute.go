@@ -30,7 +30,7 @@ func (h *FingerprintAttribute) Type() stun.AttributeType {
 
 func (h *FingerprintAttribute) Encode(msg *stun.Message) ([]byte, error) {
 	buf := new(bytes.Buffer)
-	err := stun.WriteHeader(buf, stun.Attribute(h), msg)
+	err := stun.WriteAttributeHeader(buf, stun.Attribute(h), msg)
 
 	// Calculate partial message
 	var partialMsg stun.Message

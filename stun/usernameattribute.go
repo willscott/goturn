@@ -23,7 +23,7 @@ func (h *UsernameAttribute) Type() stun.AttributeType {
 
 func (h *UsernameAttribute) Encode(msg *stun.Message) ([]byte, error) {
 	buf := new(bytes.Buffer)
-	err := stun.WriteHeader(buf, stun.Attribute(h), msg)
+	err := stun.WriteAttributeHeader(buf, stun.Attribute(h), msg)
 	buf.WriteString(msg.Credentials.Username)
 
 	if err != nil {

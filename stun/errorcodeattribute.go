@@ -45,7 +45,7 @@ func GetError(msg *stun.Message) *ErrorCodeAttribute {
 
 func (h *ErrorCodeAttribute) Encode(msg *stun.Message) ([]byte, error) {
 	buf := new(bytes.Buffer)
-	err := stun.WriteHeader(buf, stun.Attribute(h), msg)
+	err := stun.WriteAttributeHeader(buf, stun.Attribute(h), msg)
 	err = binary.Write(buf, binary.BigEndian, uint16(0))
 	err = binary.Write(buf, binary.BigEndian, h.Class)
 	err = binary.Write(buf, binary.BigEndian, h.Number)

@@ -1,3 +1,4 @@
+// Package client provides a high-level interface for connecting and querying STUN and TURN services.
 package client
 
 import (

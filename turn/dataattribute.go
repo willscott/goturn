@@ -24,7 +24,7 @@ func (h *DataAttribute) Type() stun.AttributeType {
 
 func (h *DataAttribute) Encode(msg *stun.Message) ([]byte, error) {
 	buf := new(bytes.Buffer)
-	err := stun.WriteHeader(buf, stun.Attribute(h), msg)
+	err := stun.WriteAttributeHeader(buf, stun.Attribute(h), msg)
 	buf.Write(h.Data)
 
 	if err != nil {

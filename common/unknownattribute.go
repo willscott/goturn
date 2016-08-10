@@ -5,6 +5,8 @@ import (
 	"errors"
 )
 
+// UnknownStunAttribute represents a STUN attribute found in a message for which
+// there is no parsed attribute type available.
 type UnknownStunAttribute struct {
 	ClaimedType AttributeType
 	Data        []byte
@@ -20,7 +22,7 @@ func (h *UnknownStunAttribute) Type() AttributeType {
 
 func (h *UnknownStunAttribute) Encode(msg *Message) ([]byte, error) {
 	buf := new(bytes.Buffer)
-	err := WriteHeader(buf, Attribute(h), msg)
+	err := WriteAttributeHeader(buf, Attribute(h), msg)
 	buf.Write(h.Data)
 
 	if err != nil {

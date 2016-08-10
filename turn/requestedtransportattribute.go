@@ -25,7 +25,7 @@ func (h *RequestedTransportAttribute) Type() stun.AttributeType {
 
 func (h *RequestedTransportAttribute) Encode(msg *stun.Message) ([]byte, error) {
 	buf := new(bytes.Buffer)
-	err := stun.WriteHeader(buf, stun.Attribute(h), msg)
+	err := stun.WriteAttributeHeader(buf, stun.Attribute(h), msg)
 	err = binary.Write(buf, binary.BigEndian, h.Transport)
 	err = binary.Write(buf, binary.BigEndian, uint16(0))
 	err = binary.Write(buf, binary.BigEndian, uint8(0))

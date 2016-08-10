@@ -1,3 +1,4 @@
+// Package stun represents the attributes defined in the STUN RFC Standard.
 package stun
 
 import (
@@ -5,6 +6,8 @@ import (
 )
 
 var (
+	// StunAttributes represents the AttributeSet of STUN defined attributes for
+	// use when parsing STUN messages. 
 	StunAttributes = stun.AttributeSet{
 		ErrorCode:         NewErrorCodeAttribute,
 		Fingerprint:       NewFingerprintAttribute,

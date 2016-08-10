@@ -1,3 +1,4 @@
+// Package turn represents the attributes defined in the TURN RFC Standard.
 package turn
 
 import (

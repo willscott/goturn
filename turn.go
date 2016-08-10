@@ -1,3 +1,4 @@
+// Package goturn is a native go language interface to STUN and TURN.
 package goturn
 
 import (

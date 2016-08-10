@@ -23,7 +23,7 @@ func (h *RealmAttribute) Type() stun.AttributeType {
 
 func (h *RealmAttribute) Encode(msg *stun.Message) ([]byte, error) {
 	buf := new(bytes.Buffer)
-	err := stun.WriteHeader(buf, stun.Attribute(h), msg)
+	err := stun.WriteAttributeHeader(buf, stun.Attribute(h), msg)
 	buf.WriteString(msg.Credentials.Realm)
 
 	if err != nil {

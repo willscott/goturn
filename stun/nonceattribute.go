@@ -23,7 +23,7 @@ func (h *NonceAttribute) Type() stun.AttributeType {
 
 func (h *NonceAttribute) Encode(msg *stun.Message) ([]byte, error) {
 	buf := new(bytes.Buffer)
-	err := stun.WriteHeader(buf, stun.Attribute(h), msg)
+	err := stun.WriteAttributeHeader(buf, stun.Attribute(h), msg)
 	buf.Write(msg.Credentials.Nonce)
 
 	if err != nil {

@@ -22,16 +22,16 @@ type TurnDialer struct {
 }
 
 func NewDialer(credentials *stun.Credentials, control net.Conn) (d *TurnDialer, err error) {
-  d = new(TurnDialer)
+	d = new(TurnDialer)
 	d.StunClient.Conn = control
 
 	addr, err := d.StunClient.Allocate(credentials)
 	if err != nil {
 		return nil, err
 	}
-  d.LocalAddr = addr
+	d.LocalAddr = addr
 
-  //TODO: functional cancel channel.
+	//TODO: functional cancel channel.
 
 	return d, nil
 }
@@ -51,5 +51,5 @@ func (d *TurnDialer) Dial(network, addr string) (c net.Conn, err error) {
 
 //Utility function to avoid need for clients to directly import common.
 func LongtermCredentials(username, password string) stun.Credentials {
-  return stun.Credentials{Username: username, Password: password}
+	return stun.Credentials{Username: username, Password: password}
 }

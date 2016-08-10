@@ -25,7 +25,7 @@ func (h *ChannelNumberAttribute) Type() stun.AttributeType {
 
 func (h *ChannelNumberAttribute) Encode(msg *stun.Message) ([]byte, error) {
 	buf := new(bytes.Buffer)
-	err := stun.WriteHeader(buf, stun.Attribute(h), msg)
+	err := stun.WriteAttributeHeader(buf, stun.Attribute(h), msg)
 	err = binary.Write(buf, binary.BigEndian, h.ChannelNumber)
 	err = binary.Write(buf, binary.BigEndian, uint16(0))
 

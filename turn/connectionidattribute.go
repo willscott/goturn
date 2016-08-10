@@ -25,7 +25,7 @@ func (h *ConnectionIdAttribute) Type() stun.AttributeType {
 
 func (h *ConnectionIdAttribute) Encode(msg *stun.Message) ([]byte, error) {
 	buf := new(bytes.Buffer)
-	err := stun.WriteHeader(buf, stun.Attribute(h), msg)
+	err := stun.WriteAttributeHeader(buf, stun.Attribute(h), msg)
 	err = binary.Write(buf, binary.BigEndian, h.ConnectionId)
 
 	if err != nil {

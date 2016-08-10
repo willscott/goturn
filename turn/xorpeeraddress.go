@@ -41,7 +41,7 @@ func (h *XorPeerAddressAttribute) Type() common.AttributeType {
 
 func (h *XorPeerAddressAttribute) Encode(msg *common.Message) ([]byte, error) {
 	buf := new(bytes.Buffer)
-	if err := common.WriteHeader(buf, common.Attribute(h), msg); err != nil {
+	if err := common.WriteAttributeHeader(buf, common.Attribute(h), msg); err != nil {
 		return nil, err
 	}
 	mapped := stun.XorMappedAddressAttribute(*h)
