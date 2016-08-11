@@ -1,3 +1,5 @@
+// Package main Example relays a message through a TURN server using the
+// low-level interface.
 package main
 
 import (
@@ -42,7 +44,7 @@ func main() {
 		log.Fatal("Could not parse response:", err)
 	}
 
-	// Use the first one.
+	// Use the first credential provided.
 	server, err := url.Parse(creds.Uris[0])
 	if err != nil {
 		log.Fatal("Invalid server URI:", err)

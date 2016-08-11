@@ -8,10 +8,14 @@ import (
 // UnknownStunAttribute represents a STUN attribute found in a message for which
 // there is no parsed attribute type available.
 type UnknownStunAttribute struct {
+	// ClaimedType holds the AttributeType value of the unknown attribute.
 	ClaimedType AttributeType
-	Data        []byte
+	// Data contains the unparsed body of the Attribute.
+	Data []byte
 }
 
+// NewUnknownAttribute Instantiates a new instance of an UnknownAttribute cast
+// to the Attribute Interface.
 func NewUnknownAttribute() Attribute {
 	return Attribute(new(UnknownStunAttribute))
 }

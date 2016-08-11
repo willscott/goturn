@@ -6,6 +6,7 @@ import (
 	"github.com/willscott/goturn/stun"
 )
 
+// STUN (RFC 5389) defined message types.
 const (
 	BindingRequest       common.HeaderType = 0x0001
 	SharedSecretRequest                    = 0x0002
@@ -15,18 +16,18 @@ const (
 	SharedSecretError                      = 0x0112
 )
 
-//Deprecated. Should live in individual stun attribute implementations.
+// Deprecated: Should live in individual stun attribute implementations.
 const (
 	AlternateServer common.AttributeType = 0x8023
 )
 
-// Parse a message in RFC 5389 STUN format. Attributes defined in subsequent
-// standards will be treated as 'unknown'.
+// ParseStun parses a message in RFC 5389 STUN format. Attributes defined in
+// subsequent standards will not be parsed.
 func ParseStun(data []byte) (*common.Message, error) {
 	return common.Parse(data, nil, stun.StunAttributes)
 }
 
-// Create a STUN message representing a client binding request.
+// NewBindingRequest creates a STUN message for a client binding request.
 func NewBindingRequest() (*common.Message, error) {
 	message := common.Message{
 		Header: common.Header{

@@ -7,7 +7,7 @@ import (
 
 var (
 	// StunAttributes represents the AttributeSet of STUN defined attributes for
-	// use when parsing STUN messages. 
+	// use when parsing STUN messages.
 	StunAttributes = stun.AttributeSet{
 		ErrorCode:         NewErrorCodeAttribute,
 		Fingerprint:       NewFingerprintAttribute,

@@ -26,6 +26,7 @@ func (m *Message) Serialize() ([]byte, error) {
 	body := make([]byte, bodylength)
 	bodylength = 0
 
+	// Each attribute is serialized in sequence.
 	for _, att := range m.Attributes {
 		attLen := uint16(4 * int((att.Length(m)+7)/4))
 		if attBody, err := att.Encode(m); err != nil {
@@ -36,7 +37,7 @@ func (m *Message) Serialize() ([]byte, error) {
 		bodylength += attLen
 	}
 
-	// Calculate length.
+	// Calculate message length for the header.
 	m.Header.Length = uint16(len(body))
 	head, err := m.Header.Encode()
 	if err != nil {

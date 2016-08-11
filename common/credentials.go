@@ -9,13 +9,13 @@ import (
 type Credentials struct {
 	// Each conversation has a server-provided Nonce, learned in the first server
 	// response.
-	Nonce    []byte
+	Nonce []byte
 	// Conversations with a long-term identity will have a Username provided
 	// out-of-band.
 	Username string
 	// Conversations with a long-term identity will have a Realm provided by the
 	// server.
-	Realm    string
+	Realm string
 	// Conversations validated with a message integrity attribute must have a
 	// password provided out-of-band.
 	Password string

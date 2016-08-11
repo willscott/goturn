@@ -1,3 +1,5 @@
+// Package main Example uses net.Http over a TURN connection. Expects server to
+// support RFC 6062 (TURN extensions for TCP).
 package main
 
 import (

@@ -19,11 +19,11 @@ type HeaderType uint16
 // Header represents the header of a STUN message.
 type Header struct {
 	// The Purpose of a STUN message is denoted by its Type.
-	Type   HeaderType
+	Type HeaderType
 	// Length represents the total length of the Message Attributes.
 	Length uint16
 	// Each STUN message has a unique Id.
-	Id     [12]byte
+	Id [12]byte
 }
 
 // String provides a textual representation of a STUN header for logging or debugging.

@@ -12,6 +12,8 @@ const (
 	ErrorCode stun.AttributeType = 0x9
 )
 
+// ErrorCodeAttribute is present in Error Repsonse messages, and indicates why
+// the server was unable to complete a request.
 type ErrorCodeAttribute struct {
 	Class  uint8
 	Number uint8

@@ -12,20 +12,28 @@ import (
 	"time"
 )
 
-// The Client maintains state on a connection with a stun/turn server
-
+// StunClient maintains state on a connection with a stun/turn server.
+// New StunClient's should be created either by wrapping an existing net.Conn
+// Connection to a Stun Server (as shown in the getIP and reflexiveTurn
+// examples), or can be implicitly created through the Dialer interface.
 type StunClient struct {
-	// The connection handles requests to the server, and can be either UDP,
-	// TCP, or TCP over TLS.
+	// The connection transport for communication with the server. This connection
+	// comes from net.Dial, and can be over UDP, TCP, or TCP over TLS as supported
+	// by the server.
 	net.Conn
 
-	// A buffered reader helps us read from the connection.
+	// A buffered reader is used to read from the connection. All calls to read
+	// will be called on reader. if reader is nil, a new bufio.Reader will be
+	// created to wrap the current net.Conn.
 	reader *bufio.Reader
 
-	// The dialer for making new connections.
+	// A net.Dialer is used to provide additional flexibility when Connect() is
+	// called, since a new connection to the server will need to be created. The
+	// StunClient defaults to using the same transport method for these subsequent
+	// connections, but this can be further specified with a custom Dialer.
 	*net.Dialer
 
-	// The credentials used for authenticating communication with the server.
+	// Credentials used for authenticating communication with the server.
 	*stun.Credentials
 
 	// Timeout until the active connection expires.
@@ -35,8 +43,8 @@ type StunClient struct {
 	Deadline time.Time
 }
 
-// Create a new connection to the same remote endpoint, sharing credentials
-// with the current connection
+// deriveConnection creates a new connection to the same remote endpoint,
+// sharing credentials with the current connection.
 func (s *StunClient) deriveConnection() (*StunClient, error) {
 	other := new(StunClient)
 	other.Dialer = s.Dialer
@@ -51,7 +59,7 @@ func (s *StunClient) deriveConnection() (*StunClient, error) {
 	return other, nil
 }
 
-// Send a message from the client.
+// send transmits a message from the client.
 func (s *StunClient) send(packet *stun.Message, err error) error {
 	if err != nil {
 		return err
@@ -71,7 +79,8 @@ func (s *StunClient) send(packet *stun.Message, err error) error {
 	return nil
 }
 
-// Read the next packet off of the connection abstracted by the client.
+// readStunPacket Reads the next packet off of the connection abstracted by the
+// client.
 // Returns either the next message, or an error if the next set of bytes
 // do not represent a valid message.
 func (s *StunClient) readStunPacket() (*stun.Message, error) {
@@ -115,10 +124,13 @@ func (s *StunClient) readStunPacket() (*stun.Message, error) {
 	return goturn.ParseTurn(buffer, s.Credentials)
 }
 
-// Request a Stun Binding to learn the Internet-visible address of the current
-// connection.
+// Bind Requests a Stun "Binding" to retrieve the Internet-visible address of
+// the connection with the server. This is the function provided by the STUN
+// RFC - to learn how a remote machine sees an active UDP connection created
+// by the client, so that you can offer that endpoint for other machines to
+// connect to.
 func (s *StunClient) Bind() (net.Addr, error) {
-	// construct request message
+	// construct a binding request message
 	packet, err := goturn.NewBindingRequest()
 	if err != nil {
 		return nil, err
@@ -129,7 +141,7 @@ func (s *StunClient) Bind() (net.Addr, error) {
 		return nil, err
 	}
 
-	// send message
+	// send the message and read the response
 	if _, err = s.Conn.Write(message); err != nil {
 		return nil, err
 	}
@@ -146,6 +158,7 @@ func (s *StunClient) Bind() (net.Addr, error) {
 	port := uint16(0)
 	address := net.IP{}
 
+  // extract the address if there is one.
 	if attr != nil {
 		addr := (*attr).(*stunattrs.MappedAddressAttribute)
 		port = addr.Port
@@ -162,6 +175,11 @@ func (s *StunClient) Bind() (net.Addr, error) {
 	return stun.NewAddress(s.Conn.RemoteAddr().Network(), address, port), nil
 }
 
+// allocateUnauthenticated sends a TURN Allocate request (A request for
+// permission to send and receive data through the TURN server), but without
+// any credentials. By the RFC, this request must fail, but the error response
+// is used to populate the Nonce and Realm used by the server, so that subsequent
+// requests can be properly authenticated.
 func (s *StunClient) allocateUnauthenticated() error {
 	// make a simple allocation message
 	creds := s.Credentials
@@ -189,8 +207,8 @@ func (s *StunClient) allocateUnauthenticated() error {
 	return nil
 }
 
-// Request to connect to a Turn server. The Turn protocol uses the term
-// allocation to refer to an authenticated connection with the server.
+// Allocate Requests to connect to a TURN server. The TURN protocol uses the
+// term allocation to refer to an authenticated connection with the server.
 // Returns the bound address.
 func (s *StunClient) Allocate(c *stun.Credentials) (net.Addr, error) {
 	s.Credentials = c
@@ -222,9 +240,9 @@ func (s *StunClient) Allocate(c *stun.Credentials) (net.Addr, error) {
 	return stun.NewAddress(s.Conn.RemoteAddr().Network(), relayAddress.Address, relayAddress.Port), nil
 }
 
-// Request permission to relay data with a remote address. The Client should
-// already have an authenticated connection with the server, using Allocate,
-// for this request to succeed.
+// RequestPermission secures permission to send data with a remote address. The
+// Client should already have an authenticated connection with the server, using
+// Allocate, for this request to succeed.
 func (s *StunClient) RequestPermission(with net.Addr) error {
 	addr := stun.Address{with}
 	if err := s.send(goturn.NewPermissionRequest(addr.HostPart())); err != nil {
@@ -241,7 +259,9 @@ func (s *StunClient) RequestPermission(with net.Addr) error {
 	return nil
 }
 
-//Assumes that there is already an allocation for the client.
+// Connect creates a new connection to 'to', relayed through the TURN server.
+// The remote address must be pre-negotiated using RequestPermission for the
+// proxied connection to be permitted.
 func (s *StunClient) Connect(to net.Addr) (net.Conn, error) {
 	if err := s.send(goturn.NewConnectRequest(to)); err != nil {
 		return nil, err

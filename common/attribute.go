@@ -45,11 +45,11 @@ func WriteAttributeHeader(buf *bytes.Buffer, a Attribute, msg *Message) error {
 func DecodeAttribute(data []byte, attrs AttributeSet, parser *Parser) (*Attribute, error) {
 	attributeType := binary.BigEndian.Uint16(data)
 	length := binary.BigEndian.Uint16(data[2:])
-	attrMaker, ok := attrs[AttributeType(attributeType)]
+	attrConstructor, ok := attrs[AttributeType(attributeType)]
 	if !ok {
-		attrMaker = NewUnknownAttribute
+		attrConstructor = NewUnknownAttribute
 	}
-	result := attrMaker()
+	result := attrConstructor()
 
 	err := result.Decode(data[4:], length, parser)
 	if err != nil {
