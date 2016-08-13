@@ -1,5 +1,6 @@
 Go TURN
 =======
+[![GoDoc](https://godoc.org/github.com/willscott/goturn?status.svg)](https://godoc.org/github.com/willscott/goturn)
 
 This is a library providing a Go interface compatible with the golang
 [proxy](https://golang.org/x/net/proxy) package which connects through a
