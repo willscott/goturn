@@ -129,6 +129,19 @@ func (s *StunClient) readStunPacket() (*stun.Message, error) {
 // RFC - to learn how a remote machine sees an active UDP connection created
 // by the client, so that you can offer that endpoint for other machines to
 // connect to.
+//
+// A trivial Binding usage would be:
+//
+//  // Wrap a connection with a StunClient.
+//  client := client.StunClient{Conn: c}
+//
+//  // Request the Binding.
+//  address, err := client.Bind()
+//  if err != nil {
+//    log.Fatal("Failed bind:", err)
+//  }
+//
+//  fmt.Printf("My address is: %s", address.String())
 func (s *StunClient) Bind() (net.Addr, error) {
 	// construct a binding request message
 	packet, err := goturn.NewBindingRequest()
