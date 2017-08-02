@@ -20,37 +20,42 @@ Full Example
 ------------
 
 ```golang
-import (
-  "fmt"
-  "ioutil"
-  "net"
-  "net/http"
+package main
 
-  "github.com/willscott/goturn/client"
+import (
+	"io/ioutil"
+	"log"
+	"net"
+	"net/http"
+
+	"github.com/willscott/goturn/client"
 )
 
-// Connect to the stun/turn server
-conn, err := net.Dial("tcp", "127.0.0.1:19302")
-if err != nil {
-  log.Fatal("Could open TCP Connection:", err)
-}
-defer c.Close()
+func main() {
+	// Connect to the stun/turn server
+	conn, err := net.Dial("tcp", "127.0.0.1:19302")
+	if err != nil {
+		log.Fatal("error dialing TURN server: ", err)
+	}
+	defer conn.Close()
 
-credentials := client.LongtermCredentials("username", "password")
-dialer, err := client.NewDialer(credentials, conn
-if err != nil {
-  fatalf("Failed to obtain dialer: %v\n", err)
-}
+	credentials := client.LongtermCredentials("username", "password")
+	dialer, err := client.NewDialer(&credentials, conn)
+	if err != nil {
+		log.Fatal("failed to obtain dialer: ", err)
+	}
 
-httpClient := &http.Client{Transport: &http.Transport{Dial: dialer.Dial}}
-httpResp, err := httpClient.Get("http://www.google.com/")
-if err != nil {
-  log.Fatal("Failed to get webpage", err)
+	httpClient := &http.Client{Transport: &http.Transport{Dial: dialer.Dial}}
+	httpResp, err := httpClient.Get("http://www.google.com/")
+	if err != nil {
+		log.Fatal("error performing http request: ", err)
+	}
+	defer httpResp.Body.Close()
+
+	httpBody, err := ioutil.ReadAll(httpResp.Body)
+	if err != nil {
+		log.Fatal("error reading http response: ", err)
+	}
+	log.Printf("received %d bytes", len(httpBody))
 }
-defer httpResp.Body.Close()
-httpBody, err := ioutil.ReadAll(httpResp.Body)
-if err != nil {
-  log.Fatal("Failed to read response", err)
-}
-log.Printf("Received Webpage Body is: %s", string(httpBody))
 ```
