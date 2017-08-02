@@ -28,26 +28,18 @@ import (
 	"net"
 	"net/http"
 
-	arg "github.com/alexflint/go-arg"
 	"github.com/willscott/goturn/client"
 )
 
 func main() {
-	var args struct {
-		Address  string
-		Username string
-		Password string
-	}
-	arg.MustParse(&args)
-
 	// Connect to the stun/turn server
-	conn, err := net.Dial("tcp", args.Address)
+	conn, err := net.Dial("tcp", "127.0.0.1:19302")
 	if err != nil {
 		log.Fatal("error dialing TURN server: ", err)
 	}
 	defer conn.Close()
 
-	credentials := client.LongtermCredentials(args.Username, args.Password)
+	credentials := client.LongtermCredentials("username", "password")
 	dialer, err := client.NewDialer(&credentials, conn)
 	if err != nil {
 		log.Fatal("failed to obtain dialer: ", err)
